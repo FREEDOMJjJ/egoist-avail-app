@@ -205,7 +205,7 @@ function HomeView({ onOpenAvail, data, user }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <MangaCard
             emoji="⚔️"
-            title="СТРАЙКБУК"
+            title="STRATBOOK"
             sub="Стратегии на карты"
             onClick={() => hapticFeedback()}
           />
@@ -418,108 +418,164 @@ function MangaMascotCard({ userName, todayCount, teamSize, fullHouseCount }) {
   )
 }
 
-// ─── Gojo SVG (uses bc-mascot scenes) ────────────────────────────────────────
+// ─── Gojo Satoru SVG — chibi with blindfold ──────────────────────────────────
 
 function GojoMascotSVG({ mode }) {
   return (
-    <svg viewBox="0 0 200 220" width="100%" style={{ display: 'block', overflow: 'visible' }}>
-      {/* Body */}
-      <g>
-        {/* Neck */}
-        <rect x="92" y="113" width="16" height="6" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.5" />
-        {/* Torso */}
-        <path d="M 76 118 Q 70 132 66 152 L 60 198 Q 100 206 140 198 L 134 152 Q 130 132 124 118 Z"
-          fill="#202024" stroke="#0a0a0a" strokeWidth="2.6" />
-        {/* High collar */}
-        <path d="M 82 116 L 100 124 L 118 116 L 118 128 L 100 132 L 82 128 Z"
-          fill="#101012" stroke="#0a0a0a" strokeWidth="2" />
-        {/* Gold button */}
-        <circle cx="120" cy="142" r="3" fill="#e3b948" stroke="#0a0a0a" strokeWidth="0.9" />
-        <circle cx="120" cy="142" r="1" fill="#fff" opacity="0.7" />
+    <svg viewBox="0 0 200 230" width="100%" style={{ display: 'block', overflow: 'visible' }}>
 
-        {/* Arms based on mode */}
-        {mode === 'laptop' && (
-          <>
-            <path d="M 66 168 Q 60 178 64 188 L 76 188 L 78 174 Z" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="2" />
-            <path d="M 134 168 Q 140 178 136 188 L 124 188 L 122 174 Z" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="2" />
-            {/* laptop */}
-            <path d="M 50 168 L 150 168 L 156 142 L 44 142 Z" fill="#1a1a1f" stroke="#0a0a0a" strokeWidth="2" />
-            <path d="M 54 165 L 146 165 L 152 145 L 48 145 Z" fill="#0a0a0a" />
-            <text x="100" y="160" textAnchor="middle" fontFamily="Permanent Marker, system-ui" fontSize="12" fill="#ff99cc">EG</text>
-            <path d="M 40 178 L 160 178 L 168 200 L 32 200 Z" fill="#2a2a2f" stroke="#0a0a0a" strokeWidth="2" />
-          </>
-        )}
-        {mode === 'gaming' && (
-          <>
-            <path d="M 76 124 Q 64 150 76 168 L 92 162 L 88 132 Z" fill="#202024" stroke="#0a0a0a" strokeWidth="2" />
-            <path d="M 124 124 Q 136 150 124 168 L 108 162 L 112 132 Z" fill="#202024" stroke="#0a0a0a" strokeWidth="2" />
-            {/* controller */}
-            <rect x="72" y="158" width="56" height="32" rx="14" fill="#2a2a2f" stroke="#0a0a0a" strokeWidth="2" />
-            <circle cx="114" cy="170" r="4" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1.5" />
-            <circle cx="122" cy="178" r="4" fill="#fff" stroke="#0a0a0a" strokeWidth="1.5" />
-            <circle cx="88" cy="172" r="6" fill="#1a1a1f" stroke="#0a0a0a" strokeWidth="1.5" />
-          </>
-        )}
-        {mode === 'beer' && (
-          <>
-            <path d="M 70 130 Q 56 160 60 188 L 70 192 Q 74 168 82 138 Z" fill="#202024" stroke="#0a0a0a" strokeWidth="2" />
-            <g style={{ transformOrigin: '124px 124px', animation: 'bcSip 3.4s ease-in-out infinite' }}>
-              <path d="M 122 124 L 138 116 L 156 130 L 148 142 L 130 134 Z" fill="#202024" stroke="#0a0a0a" strokeWidth="2" />
-              <rect x="126" y="84" width="28" height="34" rx="3" fill="#fafaf7" stroke="#0a0a0a" strokeWidth="2" />
-              <path d="M 126 86 Q 130 76 136 84 Q 140 76 146 84 Q 152 76 154 86 L 154 94 L 126 94 Z" fill="#fff" stroke="#0a0a0a" strokeWidth="2" />
-              <path d="M 154 90 Q 162 88 162 96 Q 162 104 154 104" fill="none" stroke="#0a0a0a" strokeWidth="2" />
+      {/* ── BODY ── */}
+      {/* Neck */}
+      <rect x="92" y="115" width="16" height="7" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.5"/>
+
+      {/* JJK uniform — dark navy/black */}
+      <path d="M 74 120 Q 66 136 62 158 L 56 202 Q 100 212 144 202 L 138 158 Q 134 136 126 120 Z"
+        fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2.6"/>
+      {/* uniform collar V-shape */}
+      <path d="M 80 118 L 100 130 L 120 118 L 120 132 L 100 138 L 80 132 Z"
+        fill="#0f0f1a" stroke="#0a0a0a" strokeWidth="2"/>
+      {/* uniform white trim line */}
+      <line x1="80" y1="125" x2="100" y2="133" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
+      <line x1="120" y1="125" x2="100" y2="133" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
+      {/* center seam */}
+      <line x1="100" y1="138" x2="100" y2="202" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8"/>
+
+      {/* Arms based on mode */}
+      {mode === 'laptop' && (
+        <>
+          {/* left arm */}
+          <path d="M 66 172 Q 58 180 62 192 L 74 192 L 76 176 Z" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="2"/>
+          {/* right arm */}
+          <path d="M 134 172 Q 142 180 138 192 L 126 192 L 124 176 Z" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="2"/>
+          {/* laptop */}
+          <path d="M 48 172 L 152 172 L 158 144 L 42 144 Z" fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2.2" strokeLinejoin="round"/>
+          <path d="M 52 169 L 148 169 L 154 147 L 46 147 Z" fill="#0a0a14"/>
+          <text x="100" y="163" textAnchor="middle" fontFamily="Permanent Marker, system-ui" fontSize="11" fill="#ff99cc">EG</text>
+          <path d="M 36 182 L 164 182 L 172 204 L 28 204 Z" fill="#2a2a3f" stroke="#0a0a0a" strokeWidth="2.2" strokeLinejoin="round"/>
+          {/* keys */}
+          {Array.from({length:18}).map((_,i)=>(
+            <rect key={i} x={44+(i%9)*10} y={184+Math.floor(i/9)*5.5} width="7.5" height="3.5" rx="0.8"
+              fill={i===4||i===13?"#ff99cc":"#3a3a4a"}/>
+          ))}
+          {/* tap animation */}
+          <g style={{transformOrigin:'68px 188px', animation:'bcTapL 0.7s ease-in-out infinite'}}>
+            <path d="M 64 172 Q 58 182 62 190 L 74 190 L 76 176 Z" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+          </g>
+          <g style={{transformOrigin:'132px 188px', animation:'bcTapR 0.7s ease-in-out infinite'}}>
+            <path d="M 136 172 Q 142 182 138 190 L 126 190 L 124 176 Z" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+          </g>
+        </>
+      )}
+      {mode === 'gaming' && (
+        <>
+          <path d="M 74 126 Q 62 154 74 172 L 90 166 L 86 134 Z" fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2"/>
+          <path d="M 126 126 Q 138 154 126 172 L 110 166 L 114 134 Z" fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2"/>
+          <g style={{transformOrigin:'100px 170px', animation:'bcWiggle 1.3s ease-in-out infinite'}}>
+            <rect x="72" y="160" width="56" height="30" rx="13" fill="#2a2a3f" stroke="#0a0a0a" strokeWidth="2"/>
+            <rect x="82" y="168" width="5" height="5" rx="1" fill="#666"/>
+            <rect x="90" y="164" width="5" height="5" rx="1" fill="#666"/>
+            <circle cx="118" cy="168" r="3.5" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1.2"/>
+            <circle cx="126" cy="174" r="3.5" fill="#fff" stroke="#0a0a0a" strokeWidth="1.2"/>
+            <circle cx="112" cy="174" r="3.5" fill="#4fc" stroke="#0a0a0a" strokeWidth="1.2"/>
+            <ellipse cx="78" cy="174" rx="5" ry="5" fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="1.2"/>
+            <line x1="75" y1="174" x2="81" y2="174" stroke="#666" strokeWidth="1.2"/>
+            <line x1="78" y1="171" x2="78" y2="177" stroke="#666" strokeWidth="1.2"/>
+          </g>
+          <g style={{animation:'bcSparkle 0.9s linear infinite'}}>
+            <text x="148" y="155" fontSize="10" fill="#ff99cc">✦</text>
+          </g>
+          <ellipse cx="88" cy="165" rx="6" ry="5" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+          <ellipse cx="112" cy="165" rx="6" ry="5" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+        </>
+      )}
+      {mode === 'beer' && (
+        <>
+          <path d="M 68 132 Q 54 164 58 192 L 68 196 Q 72 172 80 140 Z" fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2"/>
+          <g style={{transformOrigin:'124px 126px', animation:'bcSip 3.4s ease-in-out infinite'}}>
+            <path d="M 122 126 L 140 118 L 158 132 L 150 144 L 132 136 Z" fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2.2"/>
+            <g transform="translate(142 104)">
+              <rect x="-14" y="-18" width="28" height="34" rx="3" fill="#fafaf7" stroke="#0a0a0a" strokeWidth="2.2"/>
+              <path d="M -14 -16 Q -10 -25 -4 -18 Q 0 -27 6 -18 Q 12 -25 14 -16 L 14 -10 L -14 -10 Z"
+                fill="#fff" stroke="#0a0a0a" strokeWidth="2"/>
+              <line x1="-14" y1="-2" x2="14" y2="-2" stroke="#0a0a0a" strokeWidth="1" opacity="0.3"/>
+              <path d="M 14 -8 Q 24 -4 24 4 Q 24 12 14 12" fill="none" stroke="#0a0a0a" strokeWidth="2.2"/>
+              <ellipse cx="-14" cy="6" rx="6" ry="5" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
             </g>
-          </>
-        )}
-        {mode === 'wait' && (
-          <>
-            {/* arms crossed */}
-            <path d="M 76 132 Q 68 148 100 158 L 124 152 L 130 142 Q 110 138 100 142 L 88 135 Z" fill="#202024" stroke="#0a0a0a" strokeWidth="2" />
-            <path d="M 124 138 Q 130 156 100 162 L 80 154 L 74 144 Q 96 144 100 148 L 116 136 Z" fill="#181819" stroke="#0a0a0a" strokeWidth="2" />
-            <g style={{ animation: 'bcDots 1.4s ease-in-out infinite' }}>
-              <circle cx="156" cy="60" r="2.4" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1" />
-              <circle cx="166" cy="55" r="2" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1" opacity="0.7" />
-              <circle cx="174" cy="49" r="1.6" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1" opacity="0.45" />
-            </g>
-          </>
-        )}
+            <circle cx="138" cy="88" r="1.8" fill="#fff" opacity="0.7">
+              <animate attributeName="cy" values="94;78" dur="1.8s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0;0.8;0" dur="1.8s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+        </>
+      )}
+      {mode === 'wait' && (
+        <>
+          <path d="M 74 134 Q 66 150 100 162 L 126 154 L 132 144 Q 112 140 100 144 L 86 137 Z"
+            fill="#1a1a2e" stroke="#0a0a0a" strokeWidth="2"/>
+          <path d="M 126 140 Q 132 158 100 164 L 78 156 L 72 146 Q 94 146 100 150 L 118 138 Z"
+            fill="#0f0f1a" stroke="#0a0a0a" strokeWidth="2"/>
+          <ellipse cx="74" cy="150" rx="5" ry="4" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+          <ellipse cx="126" cy="150" rx="5" ry="4" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+          <g style={{animation:'bcDots 1.4s ease-in-out infinite'}}>
+            <circle cx="158" cy="62" r="2.4" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1"/>
+            <circle cx="168" cy="56" r="2" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1" opacity="0.7"/>
+            <circle cx="176" cy="50" r="1.6" fill="#ff99cc" stroke="#0a0a0a" strokeWidth="1" opacity="0.45"/>
+          </g>
+        </>
+      )}
+
+      {/* ── HEAD ── */}
+      {/* Hair back — big fluffy white spikes */}
+      <g style={{transformOrigin:'100px 88px', animation:'bcHairSway 3.4s ease-in-out infinite'}}>
+        <path d="M 54 98 L 44 80 L 30 62 L 48 52 L 34 32 L 58 36 L 48 8 L 76 32 L 74 4 L 94 28 L 108 2 L 116 30 L 132 8 L 132 34 L 154 16 L 148 36 L 172 32 L 160 54 L 178 60 L 162 74 L 178 84 L 156 94 L 170 110 Q 132 106 100 104 Q 68 106 54 98 Z"
+          fill="#f0f0f0" stroke="#0a0a0a" strokeWidth="2.6" strokeLinejoin="miter"/>
+        <path d="M 76 50 L 94 30 L 106 52 L 98 72 L 84 67 Z" fill="#e0e0e0" opacity="0.8"/>
+        <path d="M 110 28 L 124 46 L 116 66 L 106 56 Z" fill="#e8e8e8" opacity="0.6"/>
       </g>
 
-      {/* Head */}
-      <g>
-        {/* White hair back spikes */}
-        <g style={{ transformOrigin: '100px 90px', animation: 'bcHairSway 3.4s ease-in-out infinite' }}>
-          <path d="M 56 96 L 46 78 L 32 60 L 50 50 L 36 30 L 60 34 L 50 6 L 78 30 L 76 2 L 96 26 L 110 0 L 118 28 L 134 6 L 134 32 L 156 14 L 150 34 L 174 30 L 162 52 L 180 58 L 164 72 L 180 82 L 158 92 L 172 108 Q 134 104 100 102 Q 68 104 56 96 Z"
-            fill="#ffffff" stroke="#0a0a0a" strokeWidth="2.6" strokeLinejoin="miter" />
-          <path d="M 78 48 L 96 28 L 108 50 L 100 70 L 86 65 Z" fill="#e8e8e8" opacity="0.7" />
-        </g>
+      {/* Ears */}
+      <ellipse cx="64" cy="91" rx="4.5" ry="7" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
+      <ellipse cx="136" cy="91" rx="4.5" ry="7" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8"/>
 
-        {/* Ears */}
-        <ellipse cx="65" cy="89" rx="4" ry="6.5" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8" />
-        <ellipse cx="135" cy="89" rx="4" ry="6.5" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="1.8" />
+      {/* Face skin */}
+      <ellipse cx="100" cy="86" rx="37" ry="34" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="2.6"/>
 
-        {/* Face */}
-        <ellipse cx="100" cy="84" rx="36" ry="33" fill="#fde6dc" stroke="#0a0a0a" strokeWidth="2.6" />
+      {/* Front bangs over forehead */}
+      <path d="M 66 72 L 58 108 L 76 94 L 82 102 L 88 82 Z" fill="#f0f0f0" stroke="#0a0a0a" strokeWidth="2.2" strokeLinejoin="miter"/>
+      <path d="M 93 80 L 98 112 L 106 97 L 112 108 L 120 86 Z" fill="#f0f0f0" stroke="#0a0a0a" strokeWidth="2.2" strokeLinejoin="miter"/>
+      <path d="M 126 80 L 136 102 L 132 80 Z" fill="#f0f0f0" stroke="#0a0a0a" strokeWidth="2.2"/>
 
-        {/* Front bangs */}
-        <path d="M 68 70 L 60 106 L 78 92 L 84 100 L 90 80 Z" fill="#fff" stroke="#0a0a0a" strokeWidth="2.2" />
-        <path d="M 95 78 L 100 110 L 108 95 L 114 106 L 122 84 Z" fill="#fff" stroke="#0a0a0a" strokeWidth="2.2" />
-        <path d="M 128 78 L 138 100 L 134 78 Z" fill="#fff" stroke="#0a0a0a" strokeWidth="2.2" />
+      {/* ── BLINDFOLD (key Gojo feature!) ── */}
+      {/* main band */}
+      <path d="M 62 82 Q 100 76 138 82 L 138 96 Q 100 100 62 96 Z"
+        fill="#0a0a0a" stroke="#0a0a0a" strokeWidth="1"/>
+      {/* fabric fold highlight */}
+      <path d="M 66 84 Q 100 79 134 84" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2" fill="none"/>
+      {/* subtle eye bulge under blindfold */}
+      <ellipse cx="82" cy="89" rx="11" ry="5" fill="#111" opacity="0.6"/>
+      <ellipse cx="118" cy="89" rx="11" ry="5" fill="#111" opacity="0.6"/>
+      {/* blindfold knot at back - implied by slight wrap effect */}
+      <path d="M 62 82 Q 56 89 62 96" stroke="#0a0a0a" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M 138 82 Q 144 89 138 96" stroke="#0a0a0a" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
 
-        {/* Sunglasses */}
-        <circle cx="82" cy="88" r="13" fill="#0a0a0a" stroke="#0a0a0a" strokeWidth="2.6" />
-        <circle cx="118" cy="88" r="13" fill="#0a0a0a" stroke="#0a0a0a" strokeWidth="2.6" />
-        <line x1="94.5" y1="88" x2="105.5" y2="88" stroke="#0a0a0a" strokeWidth="2.4" />
-        <ellipse cx="77" cy="84" rx="2.6" ry="3" fill="#fff" opacity="0.92" />
-        <ellipse cx="113" cy="84" rx="2.6" ry="3" fill="#fff" opacity="0.92" />
+      {/* Nose */}
+      <ellipse cx="100" cy="100" rx="2" ry="1.5" fill="rgba(0,0,0,0.15)"/>
 
-        {/* Mouth */}
-        <path d="M 93 104 Q 100 113 107 104 Z" fill="#ff8aa6" stroke="#0a0a0a" strokeWidth="1.6" />
+      {/* Mouth — confident smirk */}
+      <path d="M 94 108 Q 100 114 108 110" stroke="#c07070" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M 94 108 Q 92 110 94 112" stroke="#c07070" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
 
-        {/* Blush */}
-        <ellipse cx="75" cy="100" rx="3" ry="2" fill="#ff99cc" opacity="0.55" />
-        <ellipse cx="125" cy="100" rx="3" ry="2" fill="#ff99cc" opacity="0.55" />
-      </g>
+      {/* Cheek blush */}
+      <ellipse cx="74" cy="102" rx="4" ry="2.5" fill="#ff99cc" opacity="0.45"/>
+      <ellipse cx="126" cy="102" rx="4" ry="2.5" fill="#ff99cc" opacity="0.45"/>
+
+      {/* Six Eyes glow — subtle purple aura around blindfold */}
+      <ellipse cx="82" cy="89" rx="13" ry="7" fill="none"
+        stroke="rgba(139,92,246,0.35)" strokeWidth="2"
+        style={{animation:'bcSixEyes 2s ease-in-out infinite'}}/>
+      <ellipse cx="118" cy="89" rx="13" ry="7" fill="none"
+        stroke="rgba(139,92,246,0.35)" strokeWidth="2"
+        style={{animation:'bcSixEyes 2s ease-in-out infinite'}}/>
 
       <style>{`
         @keyframes bcHairSway { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(1.5deg)} }
@@ -527,6 +583,13 @@ function GojoMascotSVG({ mode }) {
         @keyframes bcDots { 0%,100%{opacity:0.4;transform:translateY(0)} 50%{opacity:1;transform:translateY(-3px)} }
         @keyframes bcBubble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
         @keyframes bcWiggle { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(2deg)} }
+        @keyframes bcTapL { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+        @keyframes bcTapR { 0%,100%{transform:translateY(-3px)} 50%{transform:translateY(0)} }
+        @keyframes bcSparkle { 0%,100%{opacity:0.2} 50%{opacity:1} }
+        @keyframes bcSixEyes {
+          0%,100%{opacity:0.3;stroke-width:1.5px}
+          50%{opacity:0.7;stroke-width:2.5px}
+        }
       `}</style>
     </svg>
   )
@@ -596,6 +659,24 @@ function AvailView({ data, user, onBack, onReload }) {
       <MangaBg petals halftone />
 
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* Back button */}
+        <div style={{
+          position: 'absolute', top: 12, left: 12, zIndex: 90,
+        }}>
+          <button onClick={() => { hapticFeedback(); onBack() }} style={{
+            all: 'unset', cursor: 'pointer',
+            width: 38, height: 38, borderRadius: 12,
+            background: 'rgba(255,255,255,0.12)',
+            border: '1.5px solid rgba(255,255,255,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M15 19l-7-7 7-7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
         <div style={{ height: 8, flexShrink: 0 }} />
         <div style={{ flex: 1, overflow: 'auto', position: 'relative', paddingBottom: 4 }}>
           {!skeletonDone ? (
