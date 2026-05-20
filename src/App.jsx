@@ -3,6 +3,7 @@ import { MangaBg, MinimalLoader, SkeletonCard } from './bc-effects'
 import { Header, HpFooter, SkeletonHeader } from './bc-chrome'
 import { DayCard, WeekHeader, DayModal } from './bc-day'
 import { generateDays, formatDateKey, isToday } from './bc-shared'
+import { MangaMascotCard } from './bc-mascot'
 import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
@@ -89,7 +90,7 @@ export default function App() {
         <MangaBg petals={false} />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{
-            fontFamily: '"Permanent Marker", system-ui',
+            fontFamily: '"Nunito", system-ui',
             fontSize: 48, color: '#ff99cc', marginBottom: 16,
           }}>!</div>
           <div style={{
@@ -153,7 +154,7 @@ function HomeView({ onOpenAvail, data, user }) {
             ✿ ДОБРО ПОЖАЛОВАТЬ
           </div>
           <div style={{
-            fontFamily: '"Permanent Marker", system-ui',
+            fontFamily: '"Nunito", system-ui',
             fontSize: 52, lineHeight: 0.9, color: '#fff',
             letterSpacing: 3,
           }}>EGOIST</div>
@@ -190,7 +191,7 @@ function HomeView({ onOpenAvail, data, user }) {
             border: '2.5px solid #000', borderRadius: 16,
             padding: '18px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-            fontFamily: '"Permanent Marker", system-ui',
+            fontFamily: '"Nunito", system-ui',
             fontSize: 20, letterSpacing: 2,
             boxShadow: '4px 4px 0 #000',
             cursor: 'pointer',
@@ -240,6 +241,65 @@ function HomeView({ onOpenAvail, data, user }) {
   )
 }
 
+
+// ─── Animated calendar button ────────────────────────────────────────────────
+
+function CalButton({ onClick }) {
+  const [pressed, setPressed] = useState(false)
+  const [ripple, setRipple] = useState(false)
+
+  const handle = () => {
+    setPressed(true)
+    setRipple(true)
+    setTimeout(() => setPressed(false), 200)
+    setTimeout(() => setRipple(false), 600)
+    onClick?.()
+  }
+
+  return (
+    <button onClick={handle} style={{
+      all: 'unset',
+      width: '100%',
+      background: '#ff99cc', color: '#000',
+      border: '2.5px solid #000', borderRadius: 16,
+      padding: '18px 20px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+      fontFamily: '"Nunito", system-ui',
+      fontWeight: 900, fontSize: 18, letterSpacing: 2,
+      boxShadow: pressed ? '2px 2px 0 #000' : '4px 4px 0 #000',
+      cursor: 'pointer',
+      marginBottom: 12,
+      position: 'relative', overflow: 'hidden',
+      transform: pressed ? 'translate(2px, 2px)' : 'translate(0,0)',
+      transition: 'transform 200ms, box-shadow 200ms',
+    }}>
+      {/* Shimmer */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
+        backgroundSize: '40% 100%', backgroundRepeat: 'no-repeat',
+        animation: 'btnShimmer 2.4s linear infinite',
+      }}/>
+      {/* Ripple */}
+      {ripple && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(255,255,255,0.4)',
+          borderRadius: 'inherit',
+          animation: 'btnRipple 600ms ease-out forwards',
+          pointerEvents: 'none',
+        }}/>
+      )}
+      <span style={{ fontSize: 22, position: 'relative', zIndex: 1 }}>📅</span>
+      <span style={{ position: 'relative', zIndex: 1 }}>ОТКРЫТЬ КАЛЕНДАРЬ</span>
+      <style>{`
+        @keyframes btnShimmer { from{background-position:-50% 0} to{background-position:150% 0} }
+        @keyframes btnRipple { from{transform:scale(0);opacity:1} to{transform:scale(3);opacity:0} }
+      `}</style>
+    </button>
+  )
+}
+
 // ─── Manga stat card ──────────────────────────────────────────────────────────
 
 function StatCard({ emoji, label, value, accent }) {
@@ -254,7 +314,7 @@ function StatCard({ emoji, label, value, accent }) {
     }}>
       <div style={{ fontSize: 20, marginBottom: 4 }}>{emoji}</div>
       <div style={{
-        fontFamily: '"Permanent Marker", system-ui',
+        fontFamily: '"Nunito", system-ui',
         fontSize: 22, color: accent ? '#ff99cc' : '#fff',
         lineHeight: 1,
       }}>{value}</div>
@@ -284,7 +344,7 @@ function MangaCard({ emoji, title, sub, onClick }) {
     >
       <div style={{ fontSize: 28, marginBottom: 8 }}>{emoji}</div>
       <div style={{
-        fontFamily: '"Permanent Marker", system-ui',
+        fontFamily: '"Nunito", system-ui',
         fontSize: 14, color: '#000', letterSpacing: 1,
         marginBottom: 2,
       }}>{title}</div>
@@ -305,118 +365,6 @@ function MangaCard({ emoji, title, sub, onClick }) {
   )
 }
 
-// ─── Gojo mascot card ─────────────────────────────────────────────────────────
-
-function MangaMascotCard({ userName, todayCount, teamSize, fullHouseCount }) {
-  const [mode, setMode] = useState('wait')
-  const [textIdx, setTextIdx] = useState(0)
-
-  const MODES = ['laptop', 'gaming', 'beer', 'wait']
-  const TEXTS = {
-    laptop: ['Когда матч?', 'Расписание уже?', 'Отмечайтесь!'],
-    gaming: ['Го катку?', 'Кто в ранке?', 'Я готов!'],
-    beer:   ['Жду состав', 'Холодненькое 🍺', 'Где все??'],
-    wait:   ['Скучаю...', 'Когда уже', 'Эй, отметьтесь'],
-  }
-
-  useEffect(() => {
-    const t = setInterval(() => setMode(m => {
-      const i = MODES.indexOf(m)
-      return MODES[(i + 1) % MODES.length]
-    }), 6000)
-    return () => clearInterval(t)
-  }, [])
-
-  useEffect(() => {
-    const t = setInterval(() => setTextIdx(i => i + 1), 3000)
-    return () => clearInterval(t)
-  }, [])
-
-  const texts = TEXTS[mode]
-  const text = texts[textIdx % texts.length]
-
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.9)',
-      border: '2px solid #000', borderRadius: 16,
-      padding: '14px 14px 14px 16px',
-      display: 'flex', alignItems: 'stretch', gap: 8,
-      minHeight: 160, position: 'relative', overflow: 'hidden',
-      boxShadow: '4px 4px 0 #000',
-    }}>
-      {/* halftone */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(255,153,204,0.4) 0.6px, transparent 1px)',
-        backgroundSize: '5px 5px',
-        maskImage: 'linear-gradient(120deg, #000 0%, transparent 50%)',
-        WebkitMaskImage: 'linear-gradient(120deg, #000 0%, transparent 50%)',
-        opacity: 0.5,
-      }} />
-
-      {/* Left — text */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-        <div>
-          <div style={{
-            fontSize: 9, letterSpacing: 2.5, fontWeight: 800,
-            color: '#6a6a6a', marginBottom: 8,
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: '#ff99cc', border: '1px solid #000',
-              display: 'inline-block',
-            }} />
-            ГОДЖО · {mode === 'laptop' ? 'ПИШЕТ' : mode === 'gaming' ? 'РУБИТСЯ' : mode === 'beer' ? 'ОЖИДАЕТ' : 'ЗАЛИП'}
-          </div>
-
-          {/* Speech bubble */}
-          <div style={{
-            background: '#fff', border: '2px solid #000',
-            borderRadius: 14, padding: '10px 14px',
-            maxWidth: 150, position: 'relative',
-            boxShadow: '2px 2px 0 #000',
-            fontFamily: '"Nunito", system-ui',
-            fontWeight: 800, fontSize: 13, color: '#000',
-            lineHeight: 1.3,
-            animation: 'bcBubble 3s ease-in-out infinite',
-          }}>
-            {text}
-            <div style={{
-              position: 'absolute', right: -12, top: 16,
-              width: 0, height: 0,
-              borderTop: '7px solid transparent',
-              borderBottom: '7px solid transparent',
-              borderLeft: '12px solid #000',
-            }} />
-            <div style={{
-              position: 'absolute', right: -8, top: 18,
-              width: 0, height: 0,
-              borderTop: '5px solid transparent',
-              borderBottom: '5px solid transparent',
-              borderLeft: '9px solid #fff',
-            }} />
-          </div>
-        </div>
-
-        <div style={{
-          fontFamily: '"Nunito", system-ui',
-          fontWeight: 700, fontSize: 11, color: '#000',
-        }}>
-          {todayCount >= teamSize
-            ? '🔥 Состав 5/5 — го!'
-            : `На сегодня: ${todayCount}/${teamSize}`
-          }
-        </div>
-      </div>
-
-      {/* Right — Gojo SVG */}
-      <div style={{ width: 120, flexShrink: 0, display: 'flex', alignItems: 'flex-end' }}>
-        <GojoMascotSVG mode={mode} />
-      </div>
-    </div>
-  )
-}
 
 // ─── Gojo Satoru SVG — chibi with blindfold ──────────────────────────────────
 
