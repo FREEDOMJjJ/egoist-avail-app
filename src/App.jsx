@@ -21,20 +21,21 @@ function notificationFeedback(type = 'success') {
 }
 
 async function apiGet(path) {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'X-Telegram-Init-Data': getTelegramInitData() },
-  })
+  const headers = {}
+  const initData = getTelegramInitData()
+  if (initData) headers['X-Telegram-Init-Data'] = initData
+  const res = await fetch(`${API_URL}${path}`, { headers })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
 async function apiPost(path, body) {
+  const headers = { 'Content-Type': 'application/json' }
+  const initData = getTelegramInitData()
+  if (initData) headers['X-Telegram-Init-Data'] = initData
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Telegram-Init-Data': getTelegramInitData(),
-    },
+    headers,
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
