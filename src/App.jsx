@@ -6,7 +6,7 @@ import { MangaMascot } from './bc-mascot'
 import { generateDays, formatDateKey, isToday } from './bc-shared'
 import './styles.css'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://your-bot.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL || 'https://worker-production-40d6.up.railway.app'
 
 function getTelegramInitData() {
   return window.Telegram?.WebApp?.initData || ''
