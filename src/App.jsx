@@ -1,4 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Component } from 'react'
+
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ position:'fixed', inset:0, background:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px', color:'#fff', fontFamily:'monospace' }}>
+          <div style={{ fontSize:32, marginBottom:16 }}>💥</div>
+          <div style={{ fontFamily:'"Permanent Marker",system-ui', fontSize:22, color:'#ff6eb4', marginBottom:12 }}>CRASH</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', textAlign:'center', whiteSpace:'pre-wrap', maxWidth:320 }}>
+            {String(this.state.error?.message || this.state.error)}
+          </div>
+          <button onClick={() => window.location.reload()} style={{ marginTop:24, padding:'10px 24px', background:'#ff6eb4', color:'#000', border:'2px solid #fff', borderRadius:10, fontWeight:900, cursor:'pointer', fontSize:13 }}>ПЕРЕЗАГРУЗИТЬ</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 import { MangaBg, MinimalLoader, SkeletonCard } from './bc-effects'
 import { Header, HpFooter, SkeletonHeader } from './bc-chrome'
 import { DayCard, WeekHeader, DayModal } from './bc-day'
@@ -124,18 +145,33 @@ export default function App() {
     )
   }
 
-  if (view === 'avail') {
+  // Если данные не пришли — показать ошибку
+  if (!data && !error) {
     return (
-      <AvailView
-        data={data}
-        user={user}
-        onBack={() => setView('home')}
-        onReload={loadData}
-      />
+      <div style={{ position:'fixed', inset:0, background:'#000', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <MangaBg petals={false} halftone={false} />
+        <div style={{ position:'relative', zIndex:1, textAlign:'center', color:'#fff', fontFamily:'"Nunito",system-ui' }}>
+          <div style={{ fontSize:32, marginBottom:12 }}>⚠️</div>
+          <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)' }}>Нет данных от сервера</div>
+          <button onClick={loadData} style={{ marginTop:16, padding:'10px 24px', background:'#ff99cc', color:'#000', border:'2px solid #000', borderRadius:10, fontWeight:900, cursor:'pointer' }}>ОБНОВИТЬ</button>
+        </div>
+      </div>
     )
   }
 
-  return <HomeView onOpenAvail={() => setView('avail')} data={data} user={user} />
+  if (view === 'avail') {
+    return (
+      <ErrorBoundary>
+        <AvailView data={data} user={user} onBack={() => setView('home')} onReload={loadData} />
+      </ErrorBoundary>
+    )
+  }
+
+  return (
+    <ErrorBoundary>
+      <HomeView onOpenAvail={() => setView('avail')} data={data} user={user} />
+    </ErrorBoundary>
+  )
 }
 
 // ─── Home view — manga style ──────────────────────────────────────────────────
@@ -588,12 +624,12 @@ function AvailView({ data, user, onBack, onReload }) {
     return () => clearTimeout(id)
   }, [])
 
-  const days     = generateDays(data.days_ahead || 14)
-  const teamSize = data.team_size || 5
+  const days     = generateDays(data?.days_ahead || 14)
+  const teamSize = data?.team_size || 5
 
   // Один слот на дату: { '2025-01-01': { can: [...], cant: [...] } }
   const dayDataMap = {}
-  ;(data.slots || []).forEach(s => {
+  ;(data?.slots || []).forEach(s => {
     dayDataMap[s.slot_date] = { can: s.can || [], cant: s.cant || [] }
   })
 
