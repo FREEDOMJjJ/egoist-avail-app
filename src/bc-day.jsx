@@ -179,14 +179,26 @@ export function DayCard({ date, dayData, teamSize, onClick, justChanged }) {
           <div style={{ fontFamily:'"Nunito",system-ui', fontSize:8, letterSpacing:1.4, fontWeight:700, color:'#6a6a6a', marginTop:2 }}>{MONTHS_RU[date.getMonth()]}</div>
         </div>
 
-        {/* Avatars row */}
+        {/* Avatars row with names */}
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:6 }}>
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:6 }}>
             {Array.from({ length: teamSize }).map((_, i) => {
-              const canPlayer = dayData?.can?.[i]
+              const canPlayer  = dayData?.can?.[i]
               const cantPlayer = !canPlayer ? dayData?.cant?.[i - canCount] : null
-              const status = canPlayer ? 'can' : cantPlayer ? 'cant' : 'pending'
-              return <AnimeAvatar key={i} playerIndex={i} status={status} size={32}/>
+              const player     = canPlayer || cantPlayer
+              const status     = canPlayer ? 'can' : cantPlayer ? 'cant' : 'pending'
+              const name       = player?.display_name || player?.username || null
+              return (
+                <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                  <AnimeAvatar playerIndex={i} status={status} size={32}/>
+                  <div style={{
+                    fontFamily:'"Nunito",system-ui', fontSize:7, fontWeight:900,
+                    color: status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#9a9a9a',
+                    letterSpacing:0.3, width:34, textAlign:'center',
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                  }}>{name || '—'}</div>
+                </div>
+              )
             })}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -239,8 +251,12 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
   const cantPlayers = dayData?.cant || []
   const allPlayers = [...canPlayers.map(p => ({...p,status:'can'})), ...cantPlayers.map(p => ({...p,status:'cant'}))]
 
-  const myEntry = canPlayers.find(p => p.user_id === user?.id) || cantPlayers.find(p => p.user_id === user?.id)
-  const myStatus = myEntry ? (canPlayers.includes(myEntry) ? 'can' : 'cant') : null
+  // Number() защита от расхождения типов string vs number
+  const myId = Number(user?.id)
+  const myCanEntry  = canPlayers.find(p => Number(p.user_id) === myId)
+  const myCantEntry = cantPlayers.find(p => Number(p.user_id) === myId)
+  const myEntry  = myCanEntry || myCantEntry
+  const myStatus = myCanEntry ? 'can' : myCantEntry ? 'cant' : null
 
   const pendingCount = Math.max(0, teamSize - allPlayers.length)
   const isFull = canPlayers.length >= teamSize
@@ -256,25 +272,35 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
         setTimeInput(myEntry.time_text)
       }
     }
-  }, [myEntry])
+  }, [myId])
 
   async function handleCan() {
     if (saving) return
     setSaving(true)
     setSlashKey(k => k + 1)
-    const timeText = isAllDay ? 'ALL DAY' : timeInput.trim() || 'anytime'
-    const newStatus = myStatus === 'can' ? 'clear' : 'can'
-    await onPick(timeText, newStatus)
-    setSaving(false)
+    try {
+      const timeText = isAllDay ? 'ALL DAY' : timeInput.trim() || 'anytime'
+      const newStatus = myStatus === 'can' ? 'clear' : 'can'
+      await onPick(timeText, newStatus)
+    } catch(e) {
+      console.error('handleCan error:', e)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleCant() {
     if (saving) return
     setSaving(true)
     setSlashKey(k => k + 1)
-    const newStatus = myStatus === 'cant' ? 'clear' : 'cant'
-    await onPick('anytime', newStatus)
-    setSaving(false)
+    try {
+      const newStatus = myStatus === 'cant' ? 'clear' : 'cant'
+      await onPick('anytime', newStatus)
+    } catch(e) {
+      console.error('handleCant error:', e)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
