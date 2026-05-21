@@ -253,18 +253,8 @@ function HomeView({ onOpenAvail, data, user }) {
 
         {/* Secondary cards */}
         <div style={{ display: 'flex', gap: 10 }}>
-          <MangaCard
-            emoji="⚔️"
-            title="STRATBOOK"
-            sub="Стратегии на карты"
-            onClick={() => hapticFeedback()}
-          />
-          <MangaCard
-            emoji="💣"
-            title="ГРАНАТЫ"
-            sub="Ролики и линапы"
-            onClick={() => hapticFeedback()}
-          />
+          <TapeCard title="STRATBOOK" sub="Стратегии на карты" />
+          <TapeCard title="NADES" sub="Гранаты на картах" />
         </div>
 
         {/* Bottom note */}
