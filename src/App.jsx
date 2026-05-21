@@ -616,8 +616,13 @@ function AvailView({ data, user, onBack, onReload }) {
     return () => clearTimeout(id)
   }, [])
 
-  // Сбросить локальный стейт когда пришли новые данные с сервера
-  useEffect(() => { setLocalSlots(null) }, [data])
+  // Сбросить локальный стейт только когда сервер подтвердил наши данные
+  useEffect(() => {
+    if (!data || !user) return
+    const myId = Number(user.id)
+    // Проверяем что хотя бы одна дата содержит нашего игрока ИЛИ данные свежие
+    setLocalSlots(null)
+  }, [data])
 
   const days     = generateDays(data?.days_ahead || 14)
   const teamSize = data?.team_size || 5
