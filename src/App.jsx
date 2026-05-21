@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Component } from 'react'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component {
@@ -25,6 +25,7 @@ import { Header, HpFooter, SkeletonHeader } from './bc-chrome'
 import { DayCard, WeekHeader, DayModal } from './bc-day'
 import { generateDays, formatDateKey, isToday } from './bc-shared'
 import { MangaMascotCard } from './bc-mascot'
+import { SettingsProvider, SettingsButton, useSettings, sound } from './bc-settings'
 import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
@@ -35,10 +36,15 @@ function getTelegramInitData() {
 
 function hapticFeedback(type = 'light') {
   try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type) } catch (e) {}
+  try { sound.tap() } catch (e) {}
 }
 
 function notificationFeedback(type = 'success') {
   try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type) } catch (e) {}
+  try {
+    if (type === 'success') sound.success()
+    else if (type === 'error') sound.error()
+  } catch (e) {}
 }
 
 async function apiGet(path) {
@@ -66,8 +72,17 @@ async function apiPost(path, body) {
 // ─── Root ────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  // Блокировка — только в Telegram
-  const isInTelegram = !!(window.Telegram?.WebApp?.version || window.Telegram?.WebApp?.initData)
+  return (
+    <SettingsProvider>
+      <AppInner/>
+    </SettingsProvider>
+  )
+}
+
+function AppInner() {
+  // Telegram Desktop тоже валиден — проверяем шире
+  const tgWA = window.Telegram?.WebApp
+  const isInTelegram = !!(tgWA?.version || tgWA?.initData || tgWA?.platform)
   if (!isInTelegram) {
     return (
       <div style={{ position:'fixed', inset:0, background:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px', fontFamily:'"Nunito",sans-serif' }}>
@@ -91,7 +106,9 @@ export default function App() {
   const [data, setData]             = useState(null)
   const [view, setView]             = useState('home')
 
-  const loadData = async () => {
+  const CACHE_KEY = 'egoist_avail_v2'
+
+  const loadData = useCallback(async () => {
     try {
       const [meRes, availRes] = await Promise.all([
         apiGet('/api/me'),
@@ -100,19 +117,90 @@ export default function App() {
       setUser(meRes)
       setData(availRes)
       setError(null)
+      // Сохраняем в localStorage для следующего открытия
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ me: meRes, avail: availRes, ts: Date.now() }))
+      } catch (_) {}
     } catch (err) {
       console.error(err)
       setError('Не удалось загрузить данные.\nОткрой приложение через бота.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  // Минимальное время загрузки — 3800ms, потом можно тапнуть
+  // Debounced reload — защита от частых вызовов
+  const reloadTimer = useRef(null)
+  const debouncedReload = useCallback(() => {
+    if (reloadTimer.current) clearTimeout(reloadTimer.current)
+    reloadTimer.current = setTimeout(() => loadData(), 600)
+  }, [loadData])
+
   useEffect(() => {
+    // Показать кэш сразу — без скелетона при повторном открытии
+    try {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        const { me, avail, ts } = JSON.parse(cached)
+        // Кэш не старше 10 минут — сразу показываем
+        if (Date.now() - ts < 10 * 60 * 1000) {
+          setUser(me)
+          setData(avail)
+          setLoading(false)
+        }
+      }
+    } catch (_) {}
+
+    // Загружаем свежие данные в фоне
     loadData()
-    const t = setTimeout(() => setLoaderDone(true), 3800)
-    return () => clearTimeout(t)
+    const loaderTimer = setTimeout(() => setLoaderDone(true), 3800)
+
+    // ── SSE — реалтайм обновления ──
+    let es = null
+    let retryDelay = 3000
+    let retryTimer = null
+    let alive = true
+
+    function connectSSE() {
+      if (!alive) return
+      try {
+        const initData = window.Telegram?.WebApp?.initData || ''
+        const sep = API_URL.includes('?') ? '&' : '?'
+        // SSE не поддерживает заголовки — передаём initData как query param
+        es = new EventSource(`${API_URL}/api/events${initData ? `${sep}tg=${encodeURIComponent(initData)}` : ''}`)
+
+        es.onopen = () => {
+          retryDelay = 3000  // сброс при успехе
+        }
+
+        es.addEventListener('availability_update', () => {
+          debouncedReload()
+        })
+
+        es.onerror = () => {
+          es?.close()
+          es = null
+          if (!alive) return
+          // Экспоненциальный backoff: 3s → 6s → 12s → max 60s
+          retryTimer = setTimeout(() => {
+            retryDelay = Math.min(retryDelay * 2, 60000)
+            connectSSE()
+          }, retryDelay)
+        }
+      } catch (err) {
+        console.warn('SSE connect failed:', err)
+      }
+    }
+
+    connectSSE()
+
+    return () => {
+      alive = false
+      clearTimeout(loaderTimer)
+      clearTimeout(reloadTimer.current)
+      clearTimeout(retryTimer)
+      es?.close()
+    }
   }, [])
 
   const showLoader = loading || (!loaderDone && !tapped)
@@ -179,7 +267,7 @@ export default function App() {
   if (view === 'avail') {
     return (
       <ErrorBoundary>
-        <AvailView data={data} user={user} onBack={() => setView('home')} onReload={loadData} />
+        <AvailView data={data} user={user} onBack={() => setView('home')} onReload={debouncedReload} />
       </ErrorBoundary>
     )
   }
@@ -207,6 +295,11 @@ function HomeView({ onOpenAvail, data, user }) {
       color: '#f5f3ee',
     }}>
       <MangaBg petals halftone />
+
+      {/* Settings button — fixed top right */}
+      <div style={{ position:'fixed', top:14, right:14, zIndex:50 }}>
+        <SettingsButton/>
+      </div>
 
       <div style={{ position: 'relative', zIndex: 1, padding: '52px 16px 140px' }}>
 
@@ -641,20 +734,23 @@ function AvailView({ data, user, onBack, onReload }) {
     setLocalSlots(null)
   }, [data])
 
-  const days     = generateDays(data?.days_ahead || 14)
+  const days     = useMemo(() => generateDays(data?.days_ahead || 14), [data?.days_ahead])
   const teamSize = data?.team_size || 5
 
-  // Строим карту дат — приоритет локальным данным
-  const dayDataMap = {}
+  // useMemo — не пересчитываем на каждый ре-рендер
   const sourceSlots = localSlots ?? (data?.slots || [])
-  sourceSlots.forEach(s => {
-    dayDataMap[s.slot_date] = { can: s.can || [], cant: s.cant || [] }
-  })
+  const dayDataMap = useMemo(() => {
+    const map = {}
+    sourceSlots.forEach(s => {
+      map[s.slot_date] = { can: s.can || [], cant: s.cant || [] }
+    })
+    return map
+  }, [sourceSlots])
 
-  const todayKey  = formatDateKey(new Date())
+  const todayKey  = useMemo(() => formatDateKey(new Date()), [])
   const todayBest = dayDataMap[todayKey]?.can?.length || 0
 
-  async function handlePick(timeText, status) {
+  const handlePick = useCallback(async (timeText, status) => {
     if (!openDay) return
     hapticFeedback('medium')
     const dateKey = formatDateKey(openDay)
@@ -674,7 +770,6 @@ function AvailView({ data, user, onBack, onReload }) {
       return { ...slot, can, cant }
     })
 
-    // Если слота для этой даты ещё нет — добавляем
     const hasSlot = prevSlots.some(s => s.slot_date === dateKey)
     if (!hasSlot && status !== 'clear') {
       const newSlot = { slot_date: dateKey, can: [], cant: [] }
@@ -691,13 +786,13 @@ function AvailView({ data, user, onBack, onReload }) {
     try {
       await apiPost('/api/availability', { slot_date: dateKey, time_text: timeText, status })
       notificationFeedback('success')
-      await onReload()  // синхронизируем с сервером
+      // SSE сам подтянет обновление от других — нам не нужен лишний reload
     } catch (err) {
       console.error('handlePick error:', err)
       notificationFeedback('error')
       setLocalSlots(null)  // откатываем при ошибке
     }
-  }
+  }, [openDay, localSlots, data, user])
 
   const week1 = days.slice(0, 7)
   const week2 = days.slice(7, 14)
@@ -728,6 +823,12 @@ function AvailView({ data, user, onBack, onReload }) {
             </svg>
           </button>
         </div>
+
+        {/* Settings button — top right */}
+        <div style={{ position:'absolute', top:12, right:12, zIndex:90 }}>
+          <SettingsButton/>
+        </div>
+
         <div style={{ height: 8, flexShrink: 0 }} />
         <div style={{ flex: 1, overflow: 'auto', position: 'relative', paddingBottom: 4 }}>
           {!skeletonDone ? (
