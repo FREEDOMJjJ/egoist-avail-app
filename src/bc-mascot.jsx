@@ -1,7 +1,3 @@
-Вот обновлённый код с учётом ваших пожеланий — заменил надписи и фразы, а также улучшил анимацию:
-
-
-```jsx
 import { useState, useEffect } from 'react'
 
 const ACTIVITY_TEXTS = {
