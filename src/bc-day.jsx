@@ -305,8 +305,10 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
 
   return (
     <div style={{ position:'absolute', inset:0, zIndex:100 }}>
-      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.4)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', animation:'bcFade .28s ease-out' }}/>
-      <div style={{ position:'absolute', left:10, right:10, bottom:10, background:'rgba(255,255,255,0.96)', border:'2px solid #000', borderRadius:22, padding:'20px 18px 16px', boxShadow:`6px 6px 0 ${BC_COLORS.pink}`, animation:'bcUnfold 400ms cubic-bezier(0.34,1.56,0.64,1) both', maxHeight:'88vh', overflowY:'auto', overflowX:'hidden' }}>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position:'absolute', inset:0, zIndex:0, background:'rgba(0,0,0,0.4)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', animation:'bcFade .28s ease-out' }}/>
+      {/* Modal content — поверх backdrop */}
+      <div style={{ position:'absolute', left:10, right:10, bottom:10, zIndex:1, background:'rgba(255,255,255,0.96)', border:'2px solid #000', borderRadius:22, padding:'20px 18px 16px', boxShadow:`6px 6px 0 ${BC_COLORS.pink}`, animation:'bcUnfold 400ms cubic-bezier(0.34,1.56,0.64,1) both', maxHeight:'88vh', overflowY:'auto', overflowX:'hidden', WebkitOverflowScrolling:'touch' }}>
 
         {/* Halftone угол */}
         <div style={{ position:'absolute',top:0,right:0,width:160,height:160,pointerEvents:'none',backgroundImage:'radial-gradient(rgba(67,97,238,0.35) 0.7px,transparent 1px)',backgroundSize:'6px 6px',maskImage:'radial-gradient(70% 70% at 100% 0%,#000 0%,transparent 70%)',WebkitMaskImage:'radial-gradient(70% 70% at 100% 0%,#000 0%,transparent 70%)',opacity:0.5 }}/>
@@ -439,7 +441,8 @@ function PendingRow({ avatarIndex }) {
 
 function ActionBtn({ active, color, onClick, disabled, label, hint }) {
   const [pressed, setPressed] = useState(false)
-  const handle = () => {
+  const handle = (e) => {
+    e.stopPropagation()
     if (disabled) return
     setPressed(true)
     setTimeout(() => setPressed(false), 200)
@@ -449,7 +452,25 @@ function ActionBtn({ active, color, onClick, disabled, label, hint }) {
   const accent = isGreen ? '#22c55e' : '#ef4444'
   const dark = isGreen ? '#16a34a' : '#dc2626'
   return (
-    <button onClick={handle} disabled={disabled} style={{ all:'unset', flex:1, padding:'14px 10px', textAlign:'center', cursor: disabled ? 'not-allowed' : 'pointer', background: active ? accent : '#fff', border:`2px solid ${accent}`, borderRadius:12, boxShadow: active ? `3px 3px 0 ${dark}` : `2px 2px 0 ${accent}40`, position:'relative', overflow:'hidden', opacity: disabled ? 0.55 : 1, transform: pressed ? 'scale(0.95) translate(2px,2px)' : 'scale(1)', transition:'transform 200ms cubic-bezier(0.34,1.56,0.64,1), background 200ms' }}>
+    <button
+      onClick={handle}
+      style={{
+        flex:1, padding:'14px 10px', textAlign:'center',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        background: active ? accent : '#fff',
+        border:`2px solid ${accent}`,
+        borderRadius:12,
+        boxShadow: active ? `3px 3px 0 ${dark}` : `2px 2px 0 ${accent}40`,
+        position:'relative', overflow:'hidden',
+        opacity: disabled ? 0.55 : 1,
+        transform: pressed ? 'scale(0.95) translate(2px,2px)' : 'scale(1)',
+        transition:'transform 200ms cubic-bezier(0.34,1.56,0.64,1), background 200ms',
+        pointerEvents: 'all',
+        WebkitTapHighlightColor: 'transparent',
+        outline: 'none',
+        fontFamily: 'inherit',
+      }}
+    >
       <div style={{ fontFamily:'"Nunito",system-ui', fontWeight:900, fontSize:14, letterSpacing:1, color: active ? '#fff' : accent }}>{active ? (isGreen ? '✓ ' : '✗ ') : ''}{label}</div>
       <div style={{ fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:700, color: active ? 'rgba(255,255,255,0.7)' : accent, opacity:0.8, marginTop:3 }}>{hint}</div>
     </button>
