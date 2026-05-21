@@ -154,7 +154,7 @@ function HomeView({ onOpenAvail, data, user }) {
             ✿ ДОБРО ПОЖАЛОВАТЬ
           </div>
           <div style={{
-            fontFamily: '"Nunito", system-ui',
+            fontFamily: '"Permanent Marker", system-ui',
             fontSize: 52, lineHeight: 0.9, color: '#fff',
             letterSpacing: 3,
           }}>EGOIST</div>
@@ -162,6 +162,7 @@ function HomeView({ onOpenAvail, data, user }) {
           <div style={{
             marginTop: 8, fontSize: 13, fontWeight: 800,
             letterSpacing: 2, color: 'rgba(255,255,255,0.7)',
+            fontFamily: '"Permanent Marker", system-ui',
           }}>CS2 SQUAD</div>
         </div>
 
@@ -264,7 +265,7 @@ function CalButton({ onClick }) {
       border: '2.5px solid #000', borderRadius: 16,
       padding: '18px 20px',
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-      fontFamily: '"Nunito", system-ui',
+      fontFamily: '"Permanent Marker", system-ui',
       fontWeight: 900, fontSize: 18, letterSpacing: 2,
       boxShadow: pressed ? '2px 2px 0 #000' : '4px 4px 0 #000',
       cursor: 'pointer',
