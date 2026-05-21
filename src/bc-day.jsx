@@ -240,18 +240,24 @@ export function WeekHeader({ index, days }) {
 
 // ── DayModal — модал выбора ────────────────────────────────────────────────
 
+const TIME_PRESETS = [
+  { id: 'morning', label: 'УТРО',  emoji: '🌅', range: '10:00 – 14:00' },
+  { id: 'day',     label: 'ДЕНЬ',  emoji: '☀️', range: '14:00 – 19:00' },
+  { id: 'night',   label: 'НОЧЬ',  emoji: '🌙', range: '19:00 – 23:00' },
+]
+
 export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
-  const [timeInput, setTimeInput] = useState('')
-  const [isAllDay, setIsAllDay] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [slashKey, setSlashKey] = useState(1)
-  const inputRef = useRef(null)
+  const [preset, setPreset]     = useState(null)       // 'morning'/'day'/'night' или null
+  const [timeFrom, setTimeFrom] = useState('')          // "18:00"
+  const [timeTo, setTimeTo]     = useState('')          // "22:00"
+  const [saving, setSaving]     = useState(false)
+  const fromRef = useRef(null)
+  const toRef   = useRef(null)
 
   const canPlayers = dayData?.can || []
   const cantPlayers = dayData?.cant || []
   const allPlayers = [...canPlayers.map(p => ({...p,status:'can'})), ...cantPlayers.map(p => ({...p,status:'cant'}))]
 
-  // Number() защита от расхождения типов string vs number
   const myId = Number(user?.id)
   const myCanEntry  = canPlayers.find(p => Number(p.user_id) === myId)
   const myCantEntry = cantPlayers.find(p => Number(p.user_id) === myId)
@@ -263,27 +269,48 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
 
   const wd = ['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'][date.getDay()]
 
-  // Восстановить текущее время если уже отмечен
+  // Восстановить выбор пресета или времени
   useEffect(() => {
-    if (myEntry?.time_text && myEntry.time_text !== 'anytime') {
-      if (myEntry.time_text === 'ALL DAY') {
-        setIsAllDay(true)
-      } else {
-        setTimeInput(myEntry.time_text)
-      }
+    const t = myEntry?.time_text
+    if (!t || t === 'anytime' || t === 'ALL DAY') return
+    // Может быть "MORNING", "DAY", "NIGHT" или "18:00-22:00"
+    if (['MORNING','DAY','NIGHT'].includes(t)) {
+      setPreset(t.toLowerCase())
+    } else if (t.includes('-')) {
+      const [a, b] = t.split('-').map(s => s.trim())
+      setTimeFrom(a); setTimeTo(b)
     }
   }, [myId])
+
+  function selectPreset(id) {
+    setPreset(id)
+    setTimeFrom(''); setTimeTo('')
+  }
+
+  function onFromChange(v) {
+    setTimeFrom(v); setPreset(null)
+    // Автопереход на "до" когда введено полное время HH:MM
+    if (v.length === 5 && v.includes(':') && toRef.current) {
+      setTimeout(() => toRef.current?.focus(), 50)
+    }
+  }
 
   async function handleCan() {
     if (saving) return
     setSaving(true)
-    setSlashKey(k => k + 1)
     try {
-      const timeText = isAllDay ? 'ALL DAY' : timeInput.trim() || 'anytime'
+      let timeText = 'ALL DAY'
+      if (preset) {
+        timeText = preset.toUpperCase()
+      } else if (timeFrom && timeTo) {
+        timeText = `${timeFrom}-${timeTo}`
+      } else if (timeFrom) {
+        timeText = timeFrom
+      }
       const newStatus = myStatus === 'can' ? 'clear' : 'can'
       await onPick(timeText, newStatus)
     } catch(e) {
-      console.error('handleCan error:', e)
+      console.error('handleCan:', e)
     } finally {
       setSaving(false)
     }
@@ -292,12 +319,11 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
   async function handleCant() {
     if (saving) return
     setSaving(true)
-    setSlashKey(k => k + 1)
     try {
       const newStatus = myStatus === 'cant' ? 'clear' : 'cant'
       await onPick('anytime', newStatus)
     } catch(e) {
-      console.error('handleCant error:', e)
+      console.error('handleCant:', e)
     } finally {
       setSaving(false)
     }
@@ -343,51 +369,85 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
           </div>
         )}
 
-        {/* ── Поле времени ── */}
+        {/* ── Выбор времени: пресеты + ручной диапазон ── */}
         <div style={{ marginTop:16, position:'relative', zIndex:2 }}>
-          <div style={{ fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:2.5, fontWeight:800, color:'#6a6a6a', marginBottom:8 }}>КОГДА СМОЖЕШЬ ИГРАТЬ?</div>
+          <div style={{ fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:2.5, fontWeight:800, color:'#6a6a6a', marginBottom:8 }}>
+            КОГДА СМОЖЕШЬ ИГРАТЬ?
+          </div>
+          <div style={{ fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:0.5, fontWeight:600, color:'#9a9a9a', marginBottom:10 }}>
+            Если ничего не выбрать — сохранится как ВЕСЬ ДЕНЬ
+          </div>
 
-          {/* ALL DAY кнопка */}
-          <button onClick={() => { setIsAllDay(a => !a); setTimeInput('') }} style={{
-            all:'unset', cursor:'pointer',
-            display:'inline-flex', alignItems:'center', gap:6,
-            padding:'8px 16px', borderRadius:10, marginBottom:10,
-            background: isAllDay ? '#000' : '#fff',
-            border:'2px solid #000',
-            boxShadow: isAllDay ? 'none' : '2px 2px 0 #000',
-            fontFamily:'"Permanent Marker",system-ui',
-            fontSize:14, letterSpacing:1,
-            color: isAllDay ? '#fff' : '#000',
-            transition:'all 180ms cubic-bezier(0.34,1.56,0.64,1)',
-            transform: isAllDay ? 'translate(2px,2px)' : '',
+          {/* Пресеты: УТРО / ДЕНЬ / НОЧЬ */}
+          <div style={{ display:'flex', gap:6, marginBottom:12 }}>
+            {TIME_PRESETS.map(p => {
+              const active = preset === p.id
+              return (
+                <button key={p.id} onClick={() => selectPreset(p.id)} style={{
+                  all:'unset', cursor:'pointer', flex:1,
+                  padding:'10px 6px', borderRadius:12, textAlign:'center',
+                  background: active ? '#000' : '#fff',
+                  border:'2px solid #000',
+                  boxShadow: active ? 'none' : '2px 2px 0 #000',
+                  transition:'transform 180ms cubic-bezier(0.34,1.56,0.64,1)',
+                  transform: active ? 'translate(2px,2px)' : '',
+                }}>
+                  <div style={{ fontSize:20, marginBottom:4 }}>{p.emoji}</div>
+                  <div style={{ fontFamily:'"Permanent Marker",system-ui', fontSize:13, letterSpacing:1, color: active ? '#fff' : '#000' }}>{p.label}</div>
+                  <div style={{ fontFamily:'"Nunito",system-ui', fontSize:8, fontWeight:800, letterSpacing:0.5, color: active ? 'rgba(255,255,255,0.7)' : '#6a6a6a', marginTop:3 }}>{p.range}</div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Или вручную: от X до Y (HTML5 type=time → нативный циферблат) */}
+          <div style={{
+            background:'#fafafa', border:'2px dashed rgba(0,0,0,0.15)', borderRadius:12,
+            padding:'12px 14px',
           }}>
-            <span style={{ fontSize:16 }}>{isAllDay ? '✓' : '🌅'}</span>
-            ALL DAY
-          </button>
-
-          {/* Или конкретное время */}
-          {!isAllDay && (
-            <div style={{ position:'relative' }}>
-              <div style={{ fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:1.5, fontWeight:700, color:'#9a9a9a', marginBottom:6 }}>ИЛИ УКАЖИ ВРЕМЯ:</div>
-              <input
-                ref={inputRef}
-                value={timeInput}
-                onChange={e => setTimeInput(e.target.value)}
-                placeholder="напр. 18:00 или после 20"
-                maxLength={30}
-                style={{
-                  width:'100%', boxSizing:'border-box',
-                  padding:'12px 14px',
-                  fontFamily:'"Nunito",system-ui', fontSize:15, fontWeight:700, color:'#000',
-                  background:'#fafafa', border:'2px solid #000', borderRadius:12,
-                  outline:'none', boxShadow:'2px 2px 0 #000',
-                  transition:'box-shadow 150ms',
-                }}
-                onFocus={e => e.target.style.boxShadow = `2px 2px 0 ${BC_COLORS.pink}`}
-                onBlur={e => e.target.style.boxShadow = '2px 2px 0 #000'}
-              />
+            <div style={{ fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:1.5, fontWeight:700, color:'#6a6a6a', marginBottom:8 }}>
+              ИЛИ УКАЖИ СВОЁ ВРЕМЯ:
             </div>
-          )}
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'"Nunito",system-ui', fontSize:9, fontWeight:800, color:'#9a9a9a', marginBottom:4, letterSpacing:1 }}>С</div>
+                <input
+                  ref={fromRef}
+                  type="time"
+                  value={timeFrom}
+                  onChange={e => onFromChange(e.target.value)}
+                  style={{
+                    width:'100%', boxSizing:'border-box',
+                    padding:'10px 12px',
+                    fontFamily:'"Permanent Marker",system-ui', fontSize:18, color:'#000',
+                    background:'#fff', border:'2px solid #000', borderRadius:10,
+                    outline:'none',
+                    textAlign:'center',
+                    appearance:'none', WebkitAppearance:'none',
+                  }}
+                />
+              </div>
+              <div style={{ fontFamily:'"Permanent Marker",system-ui', fontSize:20, color:'#000', paddingTop:14 }}>—</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'"Nunito",system-ui', fontSize:9, fontWeight:800, color:'#9a9a9a', marginBottom:4, letterSpacing:1 }}>ДО</div>
+                <input
+                  ref={toRef}
+                  type="time"
+                  value={timeTo}
+                  onChange={e => { setTimeTo(e.target.value); setPreset(null) }}
+                  style={{
+                    width:'100%', boxSizing:'border-box',
+                    padding:'10px 12px',
+                    fontFamily:'"Permanent Marker",system-ui', fontSize:18, color:'#000',
+                    background:'#fff', border:'2px solid #000', borderRadius:10,
+                    outline:'none',
+                    textAlign:'center',
+                    appearance:'none', WebkitAppearance:'none',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Список игроков ── */}
@@ -413,10 +473,17 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
   )
 }
 
+function formatTimeText(t) {
+  if (!t || t === 'anytime' || t === 'ALL DAY') return '🌅 Весь день'
+  if (t === 'MORNING') return '🌅 Утро (10-14)'
+  if (t === 'DAY')     return '☀️ День (14-19)'
+  if (t === 'NIGHT')   return '🌙 Ночь (19-23)'
+  return `🕐 ${t}`
+}
+
 function PlayerRow({ player, isMe, avatarIndex }) {
   const status = player.status
   const name = player.display_name || player.username || '?'
-  const timeText = player.time_text && player.time_text !== 'anytime' ? player.time_text : null
   const borderColor = status === 'can' ? '#22c55e' : '#ef4444'
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:12, marginBottom:6, background: isMe ? (status === 'can' ? '#f0fdf4' : '#fef2f2') : '#fafafa', border: isMe ? `1.5px solid ${borderColor}` : '1px solid #ebebeb' }}>
@@ -428,7 +495,7 @@ function PlayerRow({ player, isMe, avatarIndex }) {
         </div>
         {status === 'can' && (
           <div style={{ fontFamily:'"Nunito",system-ui', fontSize:11, fontWeight:700, color:'#22c55e', marginTop:2 }}>
-            {timeText ? `🕐 ${timeText}` : '🌅 Весь день'}
+            {formatTimeText(player.time_text)}
           </div>
         )}
       </div>
