@@ -1,218 +1,167 @@
-// ─── EGOIST · Settings, Themes, Sounds, Parallax, Animated BG ──────────────────
-// Полностью изолирован, не ломает существующий код
+// ─── EGOIST · Settings + Premium Sounds + Sakura BG ───────────────────────────
+// Минималистичные настройки без тем, без аватарок
 
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 1. ТЕМЫ (32) — dark / light / cyberpunk / mono
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const THEMES = {
-  dark: {
-    name: 'DARK', emoji: '🌙',
-    bg: '#0a0a0f', bg2: '#13131e',
-    surface: 'rgba(255,255,255,0.04)',
-    card: 'rgba(255,255,255,0.95)',
-    border: '#000',
-    text: '#fff', textDim: 'rgba(255,255,255,0.6)',
-    accent: '#ff99cc', accent2: '#4361ee',
-    glow: 'rgba(255,153,204,0.25)',
-  },
-  light: {
-    name: 'LIGHT', emoji: '☀️',
-    bg: '#f5f0eb', bg2: '#ffffff',
-    surface: 'rgba(0,0,0,0.04)',
-    card: '#fff',
-    border: '#000',
-    text: '#000', textDim: 'rgba(0,0,0,0.6)',
-    accent: '#ff6eb4', accent2: '#4361ee',
-    glow: 'rgba(255,110,180,0.3)',
-  },
-  cyber: {
-    name: 'CYBER', emoji: '⚡',
-    bg: '#0a0014', bg2: '#1a0033',
-    surface: 'rgba(157,0,255,0.08)',
-    card: 'rgba(20,5,40,0.92)',
-    border: '#00ffff',
-    text: '#00ffff', textDim: 'rgba(0,255,255,0.6)',
-    accent: '#ff00aa', accent2: '#00ffff',
-    glow: 'rgba(0,255,255,0.4)',
-  },
-  mono: {
-    name: 'MONO', emoji: '◼️',
-    bg: '#1a1a1a', bg2: '#2a2a2a',
-    surface: 'rgba(255,255,255,0.05)',
-    card: 'rgba(255,255,255,0.95)',
-    border: '#000',
-    text: '#fff', textDim: 'rgba(255,255,255,0.55)',
-    accent: '#fff', accent2: '#888',
-    glow: 'rgba(255,255,255,0.2)',
-  },
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 2. КАСТОМНЫЕ АВАТАРКИ (33) — 8 вариантов голов
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const AVATAR_PRESETS = [
-  { id: 0, name: 'Undercut' },
-  { id: 1, name: 'Silver' },
-  { id: 2, name: 'Blindfold' },
-  { id: 3, name: 'Blonde' },
-  { id: 4, name: 'Dark' },
-  { id: 5, name: 'Mohawk' },
-  { id: 6, name: 'Long' },
-  { id: 7, name: 'Sharp' },
-]
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 3. ЗВУКИ (34) — Web Audio API без файлов
+// SOUNDS — премиальные iOS-style звуки через Web Audio API
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class SoundEngine {
-  constructor() {
-    this.ctx = null
-    this.enabled = false
-  }
+  constructor() { this.ctx = null; this.enabled = false }
   init() {
     if (this.ctx) return
-    try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)()
-    } catch (_) {}
+    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)() } catch (_) {}
   }
   setEnabled(v) { this.enabled = !!v; if (v) this.init() }
 
-  beep(freq = 440, duration = 0.08, type = 'sine', vol = 0.15) {
+  // iOS-style "tap" — приглушённый бас с быстрым decay (как нажатие кнопки в iOS)
+  tap() {
     if (!this.enabled || !this.ctx) return
-    try {
+    const t = this.ctx.currentTime
+    const osc = this.ctx.createOscillator()
+    const gain = this.ctx.createGain()
+    const filter = this.ctx.createBiquadFilter()
+    filter.type = 'lowpass'; filter.frequency.value = 1200
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(180, t)
+    osc.frequency.exponentialRampToValueAtTime(80, t + 0.05)
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.005)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.08)
+    osc.connect(filter).connect(gain).connect(this.ctx.destination)
+    osc.start(t); osc.stop(t + 0.1)
+  }
+
+  // iOS-style "success" — мягкая мажорная терция (тон + квинта)
+  success() {
+    if (!this.enabled || !this.ctx) return
+    const t = this.ctx.currentTime
+    const notes = [{ f: 587.33, d: 0 }, { f: 880, d: 0.08 }]  // D5, A5
+    for (const n of notes) {
       const osc = this.ctx.createOscillator()
       const gain = this.ctx.createGain()
-      osc.type = type
-      osc.frequency.value = freq
-      gain.gain.value = vol
-      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration)
+      osc.type = 'sine'
+      osc.frequency.value = n.f
+      gain.gain.setValueAtTime(0.0001, t + n.d)
+      gain.gain.exponentialRampToValueAtTime(0.12, t + n.d + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + n.d + 0.35)
       osc.connect(gain).connect(this.ctx.destination)
-      osc.start()
-      osc.stop(this.ctx.currentTime + duration)
-    } catch (_) {}
+      osc.start(t + n.d); osc.stop(t + n.d + 0.4)
+    }
   }
-  click()   { this.beep(800, 0.04, 'square', 0.08) }
-  tap()     { this.beep(600, 0.05, 'sine', 0.12) }
-  success() {
-    this.beep(523, 0.08, 'sine', 0.15)
-    setTimeout(() => this.beep(784, 0.12, 'sine', 0.15), 70)
+
+  // iOS-style "error" — короткое затухающее с приглушённым тоном
+  error() {
+    if (!this.enabled || !this.ctx) return
+    const t = this.ctx.currentTime
+    const osc = this.ctx.createOscillator()
+    const gain = this.ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(220, t)
+    osc.frequency.exponentialRampToValueAtTime(180, t + 0.15)
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(0.15, t + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2)
+    osc.connect(gain).connect(this.ctx.destination)
+    osc.start(t); osc.stop(t + 0.25)
   }
-  error()   { this.beep(220, 0.15, 'sawtooth', 0.10) }
-  notify()  {
-    this.beep(659, 0.06, 'sine', 0.12)
-    setTimeout(() => this.beep(880, 0.10, 'sine', 0.12), 50)
+
+  // Простой "click"
+  click() { this.tap() }
+
+  // Уведомление
+  notify() {
+    if (!this.enabled || !this.ctx) return
+    const t = this.ctx.currentTime
+    const notes = [659.25, 880]  // E5, A5
+    notes.forEach((f, i) => {
+      const osc = this.ctx.createOscillator()
+      const gain = this.ctx.createGain()
+      osc.type = 'sine'; osc.frequency.value = f
+      gain.gain.setValueAtTime(0.0001, t + i * 0.08)
+      gain.gain.exponentialRampToValueAtTime(0.12, t + i * 0.08 + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.08 + 0.3)
+      osc.connect(gain).connect(this.ctx.destination)
+      osc.start(t + i * 0.08); osc.stop(t + i * 0.08 + 0.35)
+    })
   }
 }
 
 export const sound = new SoundEngine()
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 4. STORAGE — настройки в localStorage
+// STORAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const STORAGE_KEY = 'egoist_settings_v1'
-
+const STORAGE_KEY = 'egoist_settings_v2'
 function loadSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch { return {} }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {} } catch { return {} }
 }
 function saveSettings(s) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)) } catch (_) {}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 5. CONTEXT
+// CONTEXT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const SettingsContext = createContext(null)
-
 export function useSettings() {
   return useContext(SettingsContext) || {
-    theme: 'dark',
-    themeData: THEMES.dark,
-    avatarId: 0,
-    soundsOn: false,
-    bgAnim: 'particles',
-    parallax: false,
-    setTheme: () => {},
-    setAvatarId: () => {},
-    setSoundsOn: () => {},
-    setBgAnim: () => {},
-    setParallax: () => {},
+    soundsOn: false, sakuraOn: true,
+    setSoundsOn: () => {}, setSakuraOn: () => {},
     openSettings: () => {},
   }
 }
 
 export function SettingsProvider({ children }) {
   const saved = loadSettings()
-  const [theme, setThemeState]       = useState(saved.theme || 'dark')
-  const [avatarId, setAvatarIdState] = useState(saved.avatarId ?? 0)
-  const [soundsOn, setSoundsOnState] = useState(saved.soundsOn ?? false)
-  const [bgAnim, setBgAnimState]     = useState(saved.bgAnim || 'particles')
-  const [parallax, setParallaxState] = useState(saved.parallax ?? false)
-  const [open, setOpen]              = useState(false)
+  const [soundsOn, setSoundsOnS] = useState(saved.soundsOn ?? false)
+  const [sakuraOn, setSakuraOnS] = useState(saved.sakuraOn ?? true)
+  const [open, setOpen]          = useState(false)
 
-  // Sync sound engine
   useEffect(() => { sound.setEnabled(soundsOn) }, [soundsOn])
+  useEffect(() => { saveSettings({ soundsOn, sakuraOn }) }, [soundsOn, sakuraOn])
 
-  // Persist
-  useEffect(() => {
-    saveSettings({ theme, avatarId, soundsOn, bgAnim, parallax })
-  }, [theme, avatarId, soundsOn, bgAnim, parallax])
-
-  const setTheme    = (v) => { sound.click(); setThemeState(v) }
-  const setAvatarId = (v) => { sound.click(); setAvatarIdState(v) }
-  const setSoundsOn = (v) => { setSoundsOnState(v); if (v) setTimeout(() => sound.notify(), 100) }
-  const setBgAnim   = (v) => { sound.click(); setBgAnimState(v) }
-  const setParallax = (v) => { sound.click(); setParallaxState(v) }
+  const setSoundsOn = (v) => { setSoundsOnS(v); if (v) setTimeout(() => sound.notify(), 80) }
+  const setSakuraOn = (v) => { sound.tap(); setSakuraOnS(v) }
   const openSettings = () => { sound.tap(); setOpen(true) }
 
   return (
     <SettingsContext.Provider value={{
-      theme, themeData: THEMES[theme] || THEMES.dark,
-      avatarId, soundsOn, bgAnim, parallax,
-      setTheme, setAvatarId, setSoundsOn, setBgAnim, setParallax,
-      openSettings,
+      soundsOn, sakuraOn,
+      setSoundsOn, setSakuraOn, openSettings,
     }}>
       {children}
       {open && <SettingsModal onClose={() => setOpen(false)} />}
-      {parallax && <ParallaxLayer/>}
-      {bgAnim !== 'off' && <AnimatedBackground type={bgAnim}/>}
+      {sakuraOn && <SakuraBackground/>}
     </SettingsContext.Provider>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 6. SETTINGS MODAL
+// SETTINGS MODAL — минималистичный, без тем и аватарок
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SettingsModal({ onClose }) {
   const s = useSettings()
-
   return (
     <div style={{
       position:'fixed', inset:0, zIndex:9998,
-      background:'rgba(0,0,0,0.55)', backdropFilter:'blur(10px)',
-      WebkitBackdropFilter:'blur(10px)',
+      background:'rgba(0,0,0,0.55)',
+      backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
       animation:'sFadeIn .25s ease-out',
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        position:'absolute', left:10, right:10, bottom:10,
+        position:'absolute', left:16, right:16, bottom:16,
         background:'rgba(255,255,255,0.96)',
         border:'2px solid #000', borderRadius:22,
         padding:'22px 18px 24px',
         boxShadow:'6px 6px 0 #ff99cc',
-        maxHeight:'90vh', overflowY:'auto',
         animation:'sSlideUp .35s cubic-bezier(0.34,1.56,0.64,1)',
       }}>
-        {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <div style={{ fontFamily:'"Permanent Marker",system-ui', fontSize:24, color:'#000', letterSpacing:1 }}>
             НАСТРОЙКИ
           </div>
@@ -223,97 +172,10 @@ function SettingsModal({ onClose }) {
           }}>×</button>
         </div>
 
-        {/* Тема */}
-        <Section title="🎨 ТЕМА">
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8 }}>
-            {Object.entries(THEMES).map(([id, t]) => (
-              <button key={id} onClick={() => s.setTheme(id)} style={{
-                padding:'12px 10px', borderRadius:12,
-                background: s.theme === id ? t.bg : '#fff',
-                border:`2px solid ${s.theme === id ? t.accent : '#000'}`,
-                boxShadow: s.theme === id ? `3px 3px 0 ${t.accent}` : '2px 2px 0 #000',
-                cursor:'pointer', textAlign:'left',
-                display:'flex', alignItems:'center', gap:8,
-                transition:'transform .15s cubic-bezier(0.34,1.56,0.64,1)',
-                transform: s.theme === id ? 'translate(2px,2px)' : 'none',
-              }}>
-                <span style={{ fontSize:24 }}>{t.emoji}</span>
-                <div>
-                  <div style={{
-                    fontFamily:'"Permanent Marker",system-ui', fontSize:14,
-                    color: s.theme === id ? t.text : '#000',
-                    letterSpacing:1,
-                  }}>{t.name}</div>
-                  {s.theme === id && (
-                    <div style={{ fontSize:9, fontWeight:800, letterSpacing:1.4, color:t.textDim, marginTop:2 }}>
-                      ✓ ВЫБРАНО
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        {/* Аватарка */}
-        <Section title="👤 ТВОЯ АВАТАРКА">
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8 }}>
-            {AVATAR_PRESETS.map(a => (
-              <button key={a.id} onClick={() => s.setAvatarId(a.id)} style={{
-                padding:'8px 4px', borderRadius:10,
-                background: s.avatarId === a.id ? '#000' : '#fff',
-                border:'2px solid #000',
-                boxShadow: s.avatarId === a.id ? 'none' : '2px 2px 0 #000',
-                cursor:'pointer',
-                display:'flex', flexDirection:'column', alignItems:'center', gap:4,
-                transform: s.avatarId === a.id ? 'translate(2px,2px)' : 'none',
-                transition:'transform .15s',
-              }}>
-                <PresetAvatar id={a.id} size={40} ring={s.avatarId === a.id ? '#ff99cc' : '#666'}/>
-                <div style={{
-                  fontFamily:'"Nunito",system-ui', fontSize:8, fontWeight:900, letterSpacing:0.5,
-                  color: s.avatarId === a.id ? '#fff' : '#000',
-                }}>{a.name}</div>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        {/* Звуки */}
-        <Section title="🔊 ЗВУКИ">
-          <Toggle on={s.soundsOn} onChange={s.setSoundsOn} label={s.soundsOn ? 'Включены' : 'Выключены'} hint="Клики, успех, уведомления"/>
-        </Section>
-
-        {/* Анимированный фон */}
-        <Section title="✨ АНИМИРОВАННЫЙ ФОН">
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-            {[
-              { id:'off',       label:'OFF',       emoji:'⬛' },
-              { id:'particles', label:'PARTICLES', emoji:'•' },
-              { id:'stars',     label:'STARS',     emoji:'✦' },
-              { id:'grid',      label:'GRID',      emoji:'⊞' },
-              { id:'sakura',    label:'SAKURA',    emoji:'🌸' },
-            ].map(opt => (
-              <button key={opt.id} onClick={() => s.setBgAnim(opt.id)} style={{
-                flex:'1 1 calc(50% - 4px)', padding:'10px 8px', borderRadius:10,
-                background: s.bgAnim === opt.id ? '#000' : '#fff',
-                border:'2px solid #000', cursor:'pointer',
-                boxShadow: s.bgAnim === opt.id ? 'none' : '2px 2px 0 #000',
-                fontFamily:'"Permanent Marker",system-ui', fontSize:11,
-                color: s.bgAnim === opt.id ? '#fff' : '#000', letterSpacing:1,
-                transform: s.bgAnim === opt.id ? 'translate(2px,2px)' : 'none',
-                transition:'transform .15s',
-              }}>{opt.emoji} {opt.label}</button>
-            ))}
-          </div>
-        </Section>
-
-        {/* Параллакс */}
-        <Section title="🎬 ПАРАЛЛАКС">
-          <Toggle on={s.parallax} onChange={s.setParallax} label={s.parallax ? 'Включён' : 'Выключен'} hint="Слои движутся при наклоне (только iOS)"/>
-        </Section>
+        <Toggle on={s.soundsOn} onChange={s.setSoundsOn} label="🔊 Звуки" hint="Тапы, успех, уведомления"/>
+        <div style={{ height:10 }}/>
+        <Toggle on={s.sakuraOn} onChange={s.setSakuraOn} label="🌸 Сакура на фоне" hint="Падающие лепестки"/>
       </div>
-
       <style>{`
         @keyframes sFadeIn { from{opacity:0} to{opacity:1} }
         @keyframes sSlideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -322,26 +184,13 @@ function SettingsModal({ onClose }) {
   )
 }
 
-function Section({ title, children }) {
-  return (
-    <div style={{ marginBottom:18 }}>
-      <div style={{
-        fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:2.5, fontWeight:800,
-        color:'#6a6a6a', marginBottom:10,
-      }}>{title}</div>
-      {children}
-    </div>
-  )
-}
-
 function Toggle({ on, onChange, label, hint }) {
   return (
     <button onClick={() => onChange(!on)} style={{
       width:'100%', display:'flex', alignItems:'center', gap:12,
-      padding:'12px 14px', borderRadius:12,
+      padding:'14px 16px', borderRadius:14,
       background:'#fff', border:'2px solid #000', cursor:'pointer',
-      boxShadow:'2px 2px 0 #000',
-      transition:'transform .15s',
+      boxShadow:'2px 2px 0 #000', transition:'transform .15s',
     }}
       onMouseDown={e => e.currentTarget.style.transform = 'translate(2px,2px)'}
       onMouseUp={e => e.currentTarget.style.transform = ''}
@@ -363,7 +212,7 @@ function Toggle({ on, onChange, label, hint }) {
         }}/>
       </div>
       <div style={{ flex:1, textAlign:'left' }}>
-        <div style={{ fontFamily:'"Nunito",system-ui', fontWeight:900, fontSize:13, color:'#000' }}>{label}</div>
+        <div style={{ fontFamily:'"Nunito",system-ui', fontWeight:900, fontSize:14, color:'#000' }}>{label}</div>
         {hint && <div style={{ fontSize:10, fontWeight:700, color:'#6a6a6a', marginTop:2 }}>{hint}</div>}
       </div>
     </button>
@@ -371,271 +220,326 @@ function Toggle({ on, onChange, label, hint }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 7. PRESET AVATARS — 8 голов в одном компоненте
+// SETTINGS ICON — интегрированная кнопка-знак в манга-стиле
+// Не круглая шестерёнка, а маленький символ ✦ как часть дизайна
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function PresetAvatar({ id = 0, size = 36, ring = '#666' }) {
-  const glow = ring === '#22c55e' ? 'rgba(34,197,94,0.4)' : ring === '#ef4444' ? 'rgba(239,68,68,0.4)' : 'transparent'
-  const filterStyle = ring === '#22c55e' || ring === '#ef4444' ? `drop-shadow(0 0 6px ${glow})` : 'none'
-
-  const heads = [
-    // 0 - Undercut
-    <g key="0">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 16 30 Q 14 18 20 12 Q 26 8 30 8 Q 34 8 40 12 Q 46 18 44 30 Q 38 16 30 14 Q 22 16 16 30Z" fill="#1a1a1a" stroke="#000" strokeWidth="1"/>
-      <path d="M 22 14 L 20 6 L 24 12 L 26 4 L 28 12 L 30 5 L 32 12 L 34 4 L 36 12 L 40 6 L 38 14" fill="#1a1a1a"/>
-    </g>,
-    // 1 - Silver
-    <g key="1">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 14 28 Q 12 14 22 8 Q 30 4 38 8 Q 48 14 46 28 Q 42 16 36 14 L 30 12 L 24 14 Q 18 16 14 28Z" fill="#d8d8e0" stroke="#999" strokeWidth="1"/>
-      <circle cx="22" cy="14" r="5" fill="#dedee8" stroke="#aaa" strokeWidth="0.6"/>
-      <circle cx="30" cy="9" r="6" fill="#e4e4ec" stroke="#aaa" strokeWidth="0.6"/>
-      <circle cx="38" cy="14" r="5" fill="#dedee8" stroke="#aaa" strokeWidth="0.6"/>
-    </g>,
-    // 2 - Blindfold
-    <g key="2">
-      <ellipse cx="30" cy="36" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 14 30 L 10 14 L 16 22 L 14 6 L 22 18 L 22 4 L 28 16 L 30 2 L 32 16 L 38 4 L 38 18 L 46 6 L 44 22 L 50 14 L 46 30 Q 40 14 30 13 Q 20 14 14 30Z" fill="#f0f0f0" stroke="#bbb" strokeWidth="1"/>
-      <rect x="16" y="33" width="28" height="6" rx="2" fill="#3355cc"/>
-      <circle cx="22" cy="36" r="1" fill="#4cc9f0"/>
-      <circle cx="30" cy="36" r="1" fill="#4cc9f0"/>
-      <circle cx="38" cy="36" r="1" fill="#4cc9f0"/>
-    </g>,
-    // 3 - Blonde
-    <g key="3">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 14 28 Q 12 14 22 8 Q 30 4 38 8 Q 48 14 46 28 Q 42 12 36 10 L 30 8 L 24 10 Q 18 12 14 28Z" fill="#e8d050" stroke="#c8a020" strokeWidth="1"/>
-      <path d="M 22 12 C 18 22 18 32 20 36 L 18 20 Z" fill="#dcc040"/>
-      <path d="M 38 12 C 42 22 42 32 40 36 L 42 20 Z" fill="#dcc040"/>
-    </g>,
-    // 4 - Dark
-    <g key="4">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 14 28 Q 12 14 20 8 Q 30 4 40 8 Q 48 14 46 28 Q 42 12 34 10 L 30 6 L 26 10 Q 18 12 14 28Z" fill="#111" stroke="#000" strokeWidth="1"/>
-      <path d="M 22 12 L 16 26 L 24 22 Z" fill="#1a1a1a"/>
-      <path d="M 30 6 L 26 26 L 32 22 Z" fill="#222"/>
-      <path d="M 38 12 L 40 26 L 36 22 Z" fill="#1a1a1a"/>
-      <path d="M 28 8 L 28 14" stroke="#4361ee" strokeWidth="1" opacity="0.6"/>
-    </g>,
-    // 5 - Mohawk
-    <g key="5">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 18 28 L 22 16 L 18 14 L 22 10 L 16 12 L 22 8 L 26 14 L 30 4 L 34 14 L 38 8 L 44 12 L 38 10 L 42 14 L 38 16 L 42 28Z" fill="#ff3366" stroke="#000" strokeWidth="1.2"/>
-      <path d="M 16 30 C 16 36 18 40 22 42" stroke="#2a2a2a" strokeWidth="0.8" fill="none"/>
-      <path d="M 44 30 C 44 36 42 40 38 42" stroke="#2a2a2a" strokeWidth="0.8" fill="none"/>
-    </g>,
-    // 6 - Long
-    <g key="6">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 12 28 Q 8 50 14 56 L 22 52 Q 18 36 18 28Z" fill="#5a3a20" stroke="#3a2010" strokeWidth="1"/>
-      <path d="M 48 28 Q 52 50 46 56 L 38 52 Q 42 36 42 28Z" fill="#5a3a20" stroke="#3a2010" strokeWidth="1"/>
-      <path d="M 14 28 Q 12 14 22 8 Q 30 4 38 8 Q 48 14 46 28 Q 40 12 30 10 Q 20 12 14 28Z" fill="#6a4a30" stroke="#3a2010" strokeWidth="1"/>
-    </g>,
-    // 7 - Sharp
-    <g key="7">
-      <ellipse cx="30" cy="34" rx="14" ry="15" fill="#faf6f0" stroke="#2a2a2a" strokeWidth="1.2"/>
-      <path d="M 14 30 L 18 12 L 20 22 L 24 8 L 26 20 L 30 6 L 32 20 L 34 8 L 38 22 L 40 12 L 46 30 Q 38 16 30 14 Q 22 16 14 30Z" fill="#2a2a2a" stroke="#000" strokeWidth="1"/>
-      <path d="M 22 20 L 24 16" stroke="#4361ee" strokeWidth="0.8" opacity="0.5"/>
-      <path d="M 30 12 L 30 18" stroke="#4361ee" strokeWidth="0.8" opacity="0.5"/>
-    </g>,
-  ]
-
+export function SettingsIcon({ style }) {
+  const s = useSettings()
+  const [hover, setHover] = useState(false)
   return (
-    <svg viewBox="0 0 60 60" width={size} height={size} style={{ filter: filterStyle }}>
-      <circle cx="30" cy="30" r="27" fill="#fff" stroke={ring} strokeWidth="2.5"/>
-      {heads[id % heads.length]}
-    </svg>
+    <button onClick={s.openSettings}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        all:'unset', cursor:'pointer',
+        width:34, height:34,
+        display:'inline-flex', alignItems:'center', justifyContent:'center',
+        position:'relative',
+        transition:'transform .25s cubic-bezier(0.34,1.56,0.64,1)',
+        transform: hover ? 'rotate(60deg)' : 'rotate(0deg)',
+        ...style,
+      }}>
+      <svg viewBox="0 0 32 32" width="28" height="28">
+        {/* Манга-стиль шестерёнка — белая обводка чёрная, как все элементы */}
+        <g style={{ transformOrigin:'16px 16px' }}>
+          <path d="M 16 4 L 18 8 L 22 6 L 23 11 L 28 12 L 26 16 L 28 20 L 23 21 L 22 26 L 18 24 L 16 28 L 14 24 L 10 26 L 9 21 L 4 20 L 6 16 L 4 12 L 9 11 L 10 6 L 14 8 Z"
+            fill="#fff" stroke="#000" strokeWidth="2" strokeLinejoin="round"/>
+          <circle cx="16" cy="16" r="4.5" fill="#000"/>
+          <circle cx="16" cy="16" r="2" fill="#ff99cc"/>
+        </g>
+      </svg>
+    </button>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 8. ANIMATED BACKGROUND (36) — particles / stars / grid / sakura
+// SAKURA BACKGROUND — мягкие падающие лепестки в манга-стиле
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function AnimatedBackground({ type = 'particles' }) {
+function SakuraBackground() {
   const canvasRef = useRef(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-
     let w = canvas.width = window.innerWidth
     let h = canvas.height = window.innerHeight
     let raf
 
-    const onResize = () => {
-      w = canvas.width = window.innerWidth
-      h = canvas.height = window.innerHeight
-    }
+    const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight }
     window.addEventListener('resize', onResize)
 
-    // ── Particles ──
-    const particles = type === 'particles' || type === 'stars'
-      ? Array.from({ length: type === 'stars' ? 80 : 50 }, () => ({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          r: Math.random() * 1.5 + 0.5,
-          a: Math.random() * 0.6 + 0.2,
-        }))
-      : []
+    const petals = Array.from({ length: 22 }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h - h * 0.3,
+      vx: -0.2 - Math.random() * 0.35,
+      vy: 0.4 + Math.random() * 0.5,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.03,
+      size: 7 + Math.random() * 7,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.015 + Math.random() * 0.02,
+      color: ['#ffb3d9','#ff99cc','#ffc7e0','#ffd1e6'][Math.floor(Math.random() * 4)],
+      opacity: 0.55 + Math.random() * 0.3,
+    }))
 
-    // ── Sakura petals ──
-    const petals = type === 'sakura'
-      ? Array.from({ length: 20 }, () => ({
-          x: Math.random() * w,
-          y: Math.random() * h - h,
-          vx: -0.3 - Math.random() * 0.3,
-          vy: 0.5 + Math.random() * 0.6,
-          rot: Math.random() * Math.PI * 2,
-          rotV: (Math.random() - 0.5) * 0.04,
-          size: 6 + Math.random() * 6,
-          color: ['#ff99cc','#ffb3d9','#ffc7e0'][Math.floor(Math.random() * 3)],
-        }))
-      : []
+    function drawPetal(p) {
+      ctx.save()
+      ctx.translate(p.x, p.y)
+      ctx.rotate(p.rot)
+      ctx.globalAlpha = p.opacity
 
-    function drawParticles() {
-      ctx.clearRect(0, 0, w, h)
-      for (const p of particles) {
-        p.x += p.vx; p.y += p.vy
-        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0
-        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = type === 'stars' ? `rgba(255,255,255,${p.a})` : `rgba(255,153,204,${p.a * 0.5})`
-        ctx.fill()
-      }
-    }
+      // Лепесток сакуры — две дуги формирующие миндалевидную форму
+      ctx.fillStyle = p.color
+      ctx.beginPath()
+      ctx.moveTo(0, -p.size)
+      ctx.bezierCurveTo(p.size * 0.6, -p.size * 0.8, p.size * 0.6, p.size * 0.8, 0, p.size)
+      ctx.bezierCurveTo(-p.size * 0.6, p.size * 0.8, -p.size * 0.6, -p.size * 0.8, 0, -p.size)
+      ctx.fill()
 
-    function drawSakura() {
-      ctx.clearRect(0, 0, w, h)
-      for (const p of petals) {
-        p.x += p.vx; p.y += p.vy; p.rot += p.rotV
-        if (p.y > h + 20) { p.y = -20; p.x = Math.random() * w + 50 }
-        if (p.x < -20) p.x = w + 20
-
-        ctx.save()
-        ctx.translate(p.x, p.y)
-        ctx.rotate(p.rot)
-        ctx.fillStyle = p.color
-        ctx.globalAlpha = 0.7
-        ctx.beginPath()
-        ctx.ellipse(0, 0, p.size * 0.4, p.size * 0.8, 0, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.restore()
-      }
-    }
-
-    function drawGrid() {
-      ctx.clearRect(0, 0, w, h)
-      const time = Date.now() / 1000
-      const offset = (time * 20) % 40
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)'
-      ctx.lineWidth = 1
-      for (let x = -40 + offset; x < w; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke()
-      }
-      for (let y = -40 + offset; y < h; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
-      }
+      // Светлая прожилка по центру
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+      ctx.lineWidth = 0.6
+      ctx.beginPath()
+      ctx.moveTo(0, -p.size * 0.8)
+      ctx.lineTo(0, p.size * 0.8)
+      ctx.stroke()
+      ctx.restore()
     }
 
     function loop() {
-      if (type === 'sakura') drawSakura()
-      else if (type === 'grid') drawGrid()
-      else drawParticles()
+      ctx.clearRect(0, 0, w, h)
+      for (const p of petals) {
+        p.wobble += p.wobbleSpeed
+        p.x += p.vx + Math.sin(p.wobble) * 0.3
+        p.y += p.vy
+        p.rot += p.rotV
+        if (p.y > h + 30) { p.y = -30; p.x = Math.random() * w + 100 }
+        if (p.x < -30) p.x = w + 20
+        drawPetal(p)
+      }
       raf = requestAnimationFrame(loop)
     }
     loop()
 
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('resize', onResize)
-    }
-  }, [type])
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize) }
+  }, [])
 
   return (
     <canvas ref={canvasRef} style={{
-      position:'fixed', inset:0, zIndex:0, pointerEvents:'none', opacity:0.7,
+      position:'fixed', inset:0, zIndex:0, pointerEvents:'none',
     }}/>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 9. PARALLAX (37) — gyroscope (iOS) или fallback на mouse
+// ANIME EYES HERO — глаза + надпись "ВЫ ГОТОВЫ?" / "ГАЗ ЕБАШИТЬСЯ"
+// + котик прыгающий внизу
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ParallaxLayer() {
-  const [tilt, setTilt] = useState({ x:0, y:0 })
-
-  useEffect(() => {
-    let unsub = () => {}
-
-    async function setup() {
-      // iOS 13+ требует разрешения
-      if (typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try {
-          const r = await DeviceOrientationEvent.requestPermission()
-          if (r !== 'granted') return
-        } catch (_) { return }
-      }
-
-      const handler = (e) => {
-        const gx = (e.gamma || 0) / 45   // -1..1
-        const bx = (e.beta || 0) / 45
-        setTilt({ x: Math.max(-1, Math.min(1, gx)), y: Math.max(-1, Math.min(1, bx)) })
-      }
-      window.addEventListener('deviceorientation', handler)
-      unsub = () => window.removeEventListener('deviceorientation', handler)
-    }
-    setup()
-
-    return () => unsub()
-  }, [])
+export function AnimeEyesHero({ ready }) {
+  // ready: количество готовых игроков сегодня
+  const isHype = ready >= 3
 
   return (
-    <>
+    <div style={{
+      position:'relative',
+      height: 220,
+      borderRadius: 16,
+      overflow:'hidden',
+      background: 'linear-gradient(180deg, #0a0010 0%, #1a0020 100%)',
+      border: '2px solid #000',
+      boxShadow: '4px 4px 0 #ff99cc',
+      marginBottom: 16,
+    }}>
+      {/* Decoration grid */}
       <div style={{
-        position:'fixed', inset:'-10%', zIndex:0, pointerEvents:'none',
-        transform: `translate(${tilt.x * 8}px, ${tilt.y * 8}px)`,
-        transition:'transform .15s ease-out',
-        background:'radial-gradient(circle at 30% 20%, rgba(255,153,204,0.08) 0%, transparent 50%)',
+        position:'absolute', inset:0,
+        backgroundImage: 'linear-gradient(rgba(255,153,204,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,153,204,0.05) 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
+        maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
+        WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
       }}/>
+
+      {/* Аниме глаза */}
       <div style={{
-        position:'fixed', inset:'-10%', zIndex:0, pointerEvents:'none',
-        transform: `translate(${tilt.x * -16}px, ${tilt.y * -16}px)`,
-        transition:'transform .2s ease-out',
-        background:'radial-gradient(circle at 70% 70%, rgba(67,97,238,0.08) 0%, transparent 50%)',
-      }}/>
-    </>
+        position:'absolute', top:36, left:0, right:0,
+        display:'flex', justifyContent:'center', gap:42,
+      }}>
+        <AnimeEye color={isHype ? '#ff2222' : '#fff'} blood={isHype}/>
+        <AnimeEye color={isHype ? '#ff2222' : '#fff'} blood={isHype} flipped/>
+      </div>
+
+      {/* Надпись по центру */}
+      <div style={{
+        position:'absolute', bottom:62, left:0, right:0, textAlign:'center',
+      }}>
+        {isHype ? (
+          <BloodText text="ГАЗ ЕБАШИТЬСЯ"/>
+        ) : (
+          <div style={{
+            fontFamily:'"Permanent Marker",system-ui',
+            fontSize:24, letterSpacing:3, color:'#fff',
+            textShadow:'0 2px 8px rgba(255,153,204,0.5), 0 0 20px rgba(255,153,204,0.3)',
+            animation:'heroPulse 2.5s ease-in-out infinite',
+          }}>
+            ВЫ ГОТОВЫ?
+          </div>
+        )}
+      </div>
+
+      {/* Котик прыгает внизу */}
+      <JumpingCat/>
+
+      <style>{`
+        @keyframes heroPulse { 0%,100%{opacity:0.9;transform:scale(1)} 50%{opacity:1;transform:scale(1.03)} }
+        @keyframes bloodDrip0 { 0%,100%{height:6px;opacity:0.9} 50%{height:14px;opacity:1} }
+        @keyframes bloodDrip1 { 0%,100%{height:4px;opacity:0.8} 50%{height:11px;opacity:1} }
+        @keyframes bloodDrip2 { 0%,100%{height:5px;opacity:0.85} 50%{height:13px;opacity:1} }
+        @keyframes bloodGlow { 0%,100%{filter:drop-shadow(0 0 4px #ff0000)} 50%{filter:drop-shadow(0 0 12px #ff0000)} }
+        @keyframes catJump {
+          0%, 100% { transform: translateX(0) translateY(0); }
+          25% { transform: translateX(40px) translateY(-30px); }
+          50% { transform: translateX(80px) translateY(0); }
+          75% { transform: translateX(40px) translateY(-30px); }
+        }
+        @keyframes catSquish {
+          0%, 25%, 50%, 75%, 100% { transform: scaleY(1); }
+          12%, 38%, 62%, 88% { transform: scaleY(1.15); }
+        }
+        @keyframes eyeBlink {
+          0%, 92%, 100% { transform: scaleY(1); }
+          95%, 97% { transform: scaleY(0.1); }
+        }
+      `}</style>
+    </div>
   )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 10. SETTINGS BUTTON (35) — кнопка-шестерёнка для открытия настроек
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export function SettingsButton({ style }) {
-  const s = useSettings()
-  const [hover, setHover] = useState(false)
-
+function AnimeEye({ color = '#fff', blood = false, flipped = false }) {
   return (
-    <button onClick={s.openSettings}
-      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{
-        width:42, height:42, borderRadius:'50%',
-        background:'rgba(255,255,255,0.92)',
-        border:'2px solid #000', cursor:'pointer',
-        boxShadow: hover ? '4px 4px 0 #ff99cc' : '2px 2px 0 #000',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:20,
-        transition:'box-shadow .15s, transform .15s',
-        transform: hover ? 'translate(-1px,-1px)' : '',
-        ...style,
-      }}>⚙️</button>
+    <div style={{
+      position:'relative',
+      width: 70, height: 60,
+      transform: flipped ? 'scaleX(-1)' : 'none',
+    }}>
+      {/* Eye container with blink */}
+      <div style={{
+        animation:'eyeBlink 4s infinite',
+        transformOrigin:'center',
+        filter: blood ? 'drop-shadow(0 0 8px rgba(255,0,0,0.6))' : 'drop-shadow(0 0 6px rgba(255,255,255,0.4))',
+      }}>
+        <svg viewBox="0 0 70 60" width="70" height="60">
+          {/* Top eyelid + lashes */}
+          <path d="M 4 28 Q 35 4 66 28"
+            stroke="#fff" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          {/* Lashes */}
+          <path d="M 8 24 L 4 18" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M 18 17 L 16 9" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M 30 13 L 30 4" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M 42 13 L 44 5" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M 55 18 L 60 11" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+          {/* Bottom lid */}
+          <path d="M 8 32 Q 35 48 62 32"
+            stroke="#fff" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+          {/* Iris */}
+          <ellipse cx="35" cy="30" rx="14" ry="16" fill={color} opacity="0.95"/>
+          {/* Pupil */}
+          <ellipse cx="35" cy="30" rx="6" ry="14" fill="#000"/>
+          {/* Highlight */}
+          <ellipse cx="32" cy="22" rx="3" ry="4" fill="#fff" opacity="0.95"/>
+          <circle cx="38" cy="35" r="1.5" fill="#fff" opacity="0.5"/>
+        </svg>
+      </div>
+      {/* Blood drips */}
+      {blood && (
+        <div style={{ position:'absolute', left:0, right:0, top:54 }}>
+          {[12, 28, 48].map((x, i) => (
+            <div key={i} style={{
+              position:'absolute', left:x, top:0,
+              width:3, borderRadius:'0 0 50% 50%',
+              background:'linear-gradient(180deg, #ff0000 0%, #800000 100%)',
+              animation: `bloodDrip${i} ${1.5 + i * 0.3}s ease-in-out infinite, bloodGlow 2s ease-in-out infinite`,
+              boxShadow:'0 0 4px rgba(255,0,0,0.8)',
+            }}/>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BloodText({ text }) {
+  return (
+    <div style={{
+      position:'relative',
+      fontFamily:'"Permanent Marker",system-ui',
+      fontSize:26, letterSpacing:3, fontWeight:'normal',
+      color:'#ff2222',
+      textShadow:'0 0 12px rgba(255,0,0,0.6), 0 0 24px rgba(255,0,0,0.4), 0 2px 0 #800',
+      animation:'heroPulse 1.2s ease-in-out infinite',
+      display:'inline-block',
+    }}>
+      {text}
+      {/* Кровь стекает по буквам */}
+      <div style={{
+        position:'absolute', left:'10%', right:'10%', top:'92%',
+        height:0, display:'flex', justifyContent:'space-around',
+      }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} style={{
+            width:2, borderRadius:'0 0 50% 50%',
+            background:'linear-gradient(180deg, #ff0000 0%, #500 100%)',
+            animation:`bloodDrip${i % 3} ${1.4 + (i * 0.18)}s ease-in-out infinite`,
+            boxShadow:'0 0 4px rgba(255,0,0,0.7)',
+          }}/>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function JumpingCat() {
+  return (
+    <div style={{
+      position:'absolute', bottom: 8, left: 0,
+      animation: 'catJump 3.2s ease-in-out infinite',
+    }}>
+      <div style={{ animation: 'catSquish 3.2s ease-in-out infinite' }}>
+        <svg viewBox="0 0 50 50" width="44" height="44" style={{ display:'block' }}>
+          {/* Тело */}
+          <ellipse cx="25" cy="32" rx="14" ry="10" fill="#fff" stroke="#000" strokeWidth="1.5"/>
+          {/* Голова */}
+          <circle cx="25" cy="22" r="10" fill="#fff" stroke="#000" strokeWidth="1.5"/>
+          {/* Уши */}
+          <path d="M 17 16 L 14 8 L 20 14 Z" fill="#fff" stroke="#000" strokeWidth="1.3"/>
+          <path d="M 33 16 L 36 8 L 30 14 Z" fill="#fff" stroke="#000" strokeWidth="1.3"/>
+          {/* Уши inner */}
+          <path d="M 16 14 L 17 10 L 18 14 Z" fill="#ff99cc"/>
+          <path d="M 34 14 L 33 10 L 32 14 Z" fill="#ff99cc"/>
+          {/* Глаза — закрытые happy глазки */}
+          <path d="M 20 22 Q 22 20 24 22" stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          <path d="M 26 22 Q 28 20 30 22" stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          {/* Нос */}
+          <path d="M 24 25 L 26 25 L 25 27 Z" fill="#ff99cc"/>
+          {/* Рот */}
+          <path d="M 25 27 Q 23 29 22 28" stroke="#000" strokeWidth="1" fill="none" strokeLinecap="round"/>
+          <path d="M 25 27 Q 27 29 28 28" stroke="#000" strokeWidth="1" fill="none" strokeLinecap="round"/>
+          {/* Усы */}
+          <line x1="14" y1="24" x2="18" y2="25" stroke="#000" strokeWidth="0.6"/>
+          <line x1="14" y1="26" x2="18" y2="26" stroke="#000" strokeWidth="0.6"/>
+          <line x1="32" y1="25" x2="36" y2="24" stroke="#000" strokeWidth="0.6"/>
+          <line x1="32" y1="26" x2="36" y2="26" stroke="#000" strokeWidth="0.6"/>
+          {/* Лапы */}
+          <ellipse cx="17" cy="40" rx="3" ry="2" fill="#fff" stroke="#000" strokeWidth="1.2"/>
+          <ellipse cx="33" cy="40" rx="3" ry="2" fill="#fff" stroke="#000" strokeWidth="1.2"/>
+          {/* Хвост */}
+          <path d="M 38 32 Q 46 28 44 20" stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          <path d="M 38 32 Q 46 28 44 20" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9"/>
+          <path d="M 38 32 Q 46 28 44 20" stroke="#000" strokeWidth="1" fill="none" strokeLinecap="round"/>
+        </svg>
+      </div>
+    </div>
   )
 }
