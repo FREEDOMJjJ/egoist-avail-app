@@ -25,7 +25,7 @@ import { Header, HpFooter, SkeletonHeader } from './bc-chrome'
 import { DayCard, WeekHeader, DayModal } from './bc-day'
 import { generateDays, formatDateKey, isToday } from './bc-shared'
 import { MangaMascotCard } from './bc-mascot'
-import { SettingsProvider, SettingsButton, useSettings, sound } from './bc-settings'
+import { SettingsProvider, SettingsIcon, useSettings, sound, AnimeEyesHero } from './bc-settings'
 import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
@@ -296,9 +296,9 @@ function HomeView({ onOpenAvail, data, user }) {
     }}>
       <MangaBg petals halftone />
 
-      {/* Settings button — fixed top right */}
+      {/* Settings icon — top right */}
       <div style={{ position:'fixed', top:14, right:14, zIndex:50 }}>
-        <SettingsButton/>
+        <SettingsIcon/>
       </div>
 
       <div style={{ position: 'relative', zIndex: 1, padding: '52px 16px 140px' }}>
@@ -324,13 +324,8 @@ function HomeView({ onOpenAvail, data, user }) {
           }}>CS2 SQUAD</div>
         </div>
 
-        {/* Mascot card */}
-        <MangaMascotCard
-          userName={userName}
-          todayCount={todayBest}
-          teamSize={teamSize}
-          fullHouseCount={fullHouseCount}
-        />
+        {/* Anime Eyes Hero — заменяет маскота */}
+        <AnimeEyesHero ready={todayBest}/>
 
         {/* Stats row */}
         <div style={{
@@ -341,24 +336,39 @@ function HomeView({ onOpenAvail, data, user }) {
           <StatCard emoji="📅" label="ДНЕЙ ВПЕРЁД" value={14} />
         </div>
 
-        {/* Main CTA */}
+        {/* Main CTA — manga style */}
         <button
           onClick={() => { hapticFeedback('medium'); onOpenAvail() }}
           style={{
             width: '100%',
-            background: '#ff99cc', color: '#000',
-            border: '2.5px solid #000', borderRadius: 16,
+            background: 'rgba(255,255,255,0.95)', color: '#000',
+            border: '2px solid #000', borderRadius: 16,
             padding: '18px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-            fontFamily: '"Nunito", system-ui',
-            fontSize: 20, letterSpacing: 2,
-            boxShadow: '4px 4px 0 #000',
+            fontFamily: '"Permanent Marker", system-ui',
+            fontSize: 18, letterSpacing: 2,
+            boxShadow: '4px 4px 0 #ff99cc',
             cursor: 'pointer',
             marginBottom: 12,
+            position: 'relative', overflow: 'hidden',
+            transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms',
           }}
+          onMouseDown={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = '2px 2px 0 #ff99cc' }}
+          onMouseUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '4px 4px 0 #ff99cc' }}
+          onTouchStart={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = '2px 2px 0 #ff99cc' }}
+          onTouchEnd={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '4px 4px 0 #ff99cc' }}
         >
-          <span style={{ fontSize: 24 }}>📅</span>
-          ОТКРЫТЬ КАЛЕНДАРЬ
+          {/* Halftone угол как на остальных карточках */}
+          <div style={{
+            position:'absolute', bottom:0, right:0,
+            width:70, height:70, pointerEvents:'none',
+            backgroundImage: 'radial-gradient(rgba(255,153,204,0.5) 0.8px, transparent 1px)',
+            backgroundSize: '6px 6px',
+            maskImage: 'radial-gradient(70% 70% at 100% 100%, #000, transparent)',
+            WebkitMaskImage: 'radial-gradient(70% 70% at 100% 100%, #000, transparent)',
+          }}/>
+          <span style={{ fontSize: 22, position:'relative', zIndex:1 }}>📅</span>
+          <span style={{ position:'relative', zIndex:1 }}>ОТКРЫТЬ КАЛЕНДАРЬ</span>
         </button>
 
         {/* Secondary cards */}
@@ -822,11 +832,6 @@ function AvailView({ data, user, onBack, onReload }) {
               <path d="M15 19l-7-7 7-7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-        </div>
-
-        {/* Settings button — top right */}
-        <div style={{ position:'absolute', top:12, right:12, zIndex:90 }}>
-          <SettingsButton/>
         </div>
 
         <div style={{ height: 8, flexShrink: 0 }} />
