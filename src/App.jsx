@@ -605,21 +605,27 @@ function GojoMascotSVG({ mode }) {
 // ─── Avail view ───────────────────────────────────────────────────────────────
 
 function AvailView({ data, user, onBack, onReload }) {
-  const [openDay, setOpenDay]                 = useState(null)
+  const [openDay, setOpenDay]           = useState(null)
   const [recentlyChanged, setRecentlyChanged] = useState(null)
-  const [skeletonDone, setSkeletonDone]       = useState(false)
+  const [skeletonDone, setSkeletonDone] = useState(false)
+  // Локальный стейт для оптимистичных обновлений
+  const [localSlots, setLocalSlots]     = useState(null)
 
   useEffect(() => {
     const id = setTimeout(() => setSkeletonDone(true), 600)
     return () => clearTimeout(id)
   }, [])
 
+  // Сбросить локальный стейт когда пришли новые данные с сервера
+  useEffect(() => { setLocalSlots(null) }, [data])
+
   const days     = generateDays(data?.days_ahead || 14)
   const teamSize = data?.team_size || 5
 
-  // Один слот на дату: { '2025-01-01': { can: [...], cant: [...] } }
+  // Строим карту дат — приоритет локальным данным
   const dayDataMap = {}
-  ;(data?.slots || []).forEach(s => {
+  const sourceSlots = localSlots ?? (data?.slots || [])
+  sourceSlots.forEach(s => {
     dayDataMap[s.slot_date] = { can: s.can || [], cant: s.cant || [] }
   })
 
@@ -630,15 +636,44 @@ function AvailView({ data, user, onBack, onReload }) {
     if (!openDay) return
     hapticFeedback('medium')
     const dateKey = formatDateKey(openDay)
+
+    // ── Оптимистичное обновление — сразу меняем UI ──
+    const prevSlots = localSlots ?? (data?.slots || [])
+    const myId = Number(user?.id)
+    const myUsername = user?.username || ''
+    const myDisplay  = user?.first_name || user?.username || 'Я'
+
+    const updatedSlots = prevSlots.map(slot => {
+      if (slot.slot_date !== dateKey) return slot
+      let can  = (slot.can  || []).filter(p => Number(p.user_id) !== myId)
+      let cant = (slot.cant || []).filter(p => Number(p.user_id) !== myId)
+      if (status === 'can')  can  = [...can,  { user_id: myId, username: myUsername, display_name: myDisplay, time_text: timeText }]
+      if (status === 'cant') cant = [...cant, { user_id: myId, username: myUsername, display_name: myDisplay, time_text: '' }]
+      return { ...slot, can, cant }
+    })
+
+    // Если слота для этой даты ещё нет — добавляем
+    const hasSlot = prevSlots.some(s => s.slot_date === dateKey)
+    if (!hasSlot && status !== 'clear') {
+      const newSlot = { slot_date: dateKey, can: [], cant: [] }
+      if (status === 'can')  newSlot.can  = [{ user_id: myId, username: myUsername, display_name: myDisplay, time_text: timeText }]
+      if (status === 'cant') newSlot.cant = [{ user_id: myId, username: myUsername, display_name: myDisplay, time_text: '' }]
+      updatedSlots.push(newSlot)
+    }
+
+    setLocalSlots(updatedSlots)
+    setRecentlyChanged(dateKey)
+    setTimeout(() => setRecentlyChanged(null), 700)
+
+    // ── Отправляем на сервер в фоне ──
     try {
       await apiPost('/api/availability', { slot_date: dateKey, time_text: timeText, status })
       notificationFeedback('success')
-      setRecentlyChanged(dateKey)
-      setTimeout(() => setRecentlyChanged(null), 700)
-      await onReload()
+      await onReload()  // синхронизируем с сервером
     } catch (err) {
-      console.error(err)
+      console.error('handlePick error:', err)
       notificationFeedback('error')
+      setLocalSlots(null)  // откатываем при ошибке
     }
   }
 
