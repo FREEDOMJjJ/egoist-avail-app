@@ -245,6 +245,52 @@ function HomeView({ onOpenAvail, data, user }) {
 
 // ─── Animated calendar button ────────────────────────────────────────────────
 
+// ─── Tape card — временно не работает ────────────────────────────────────────
+
+function TapeCard({ title, sub }) {
+  return (
+    <div style={{
+      flex: 1,
+      background: 'rgba(255,255,255,0.88)',
+      border: '2px solid #000', borderRadius: 14,
+      padding: '14px 12px',
+      boxShadow: '3px 3px 0 #000',
+      position: 'relative', overflow: 'hidden',
+      opacity: 0.75,
+      cursor: 'not-allowed',
+    }}>
+      <div style={{
+        fontFamily: '"Permanent Marker", system-ui',
+        fontSize: 14, color: '#000', letterSpacing: 1,
+        marginBottom: 2,
+      }}>{title}</div>
+      <div style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: 1,
+        color: '#6a6a6a',
+      }}>{sub}</div>
+      {/* Yellow tape */}
+      <div style={{
+        position: 'absolute',
+        top: 18, left: -28, right: -28,
+        height: 22,
+        background: 'repeating-linear-gradient(45deg, #ffd60a, #ffd60a 12px, #000 12px, #000 14px, #ffd60a 14px, #ffd60a 26px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transform: 'rotate(-6deg)',
+        zIndex: 3,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+      }}>
+        <span style={{
+          fontFamily: '"Permanent Marker", system-ui',
+          fontSize: 9, letterSpacing: 2, color: '#000',
+          fontWeight: 900, textTransform: 'uppercase',
+          background: '#ffd60a', padding: '0 8px',
+          whiteSpace: 'nowrap',
+        }}>⚠ ВРЕМЕННО НЕ РАБОТАЕТ</span>
+      </div>
+    </div>
+  )
+}
+
 function CalButton({ onClick }) {
   const [pressed, setPressed] = useState(false)
   const [ripple, setRipple] = useState(false)
@@ -261,40 +307,50 @@ function CalButton({ onClick }) {
     <button onClick={handle} style={{
       all: 'unset',
       width: '100%',
-      background: '#ff99cc', color: '#000',
-      border: '2.5px solid #000', borderRadius: 16,
+      background: 'rgba(255,255,255,0.95)', color: '#000',
+      border: '2px solid #000', borderRadius: 16,
       padding: '18px 20px',
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
       fontFamily: '"Permanent Marker", system-ui',
       fontWeight: 900, fontSize: 18, letterSpacing: 2,
-      boxShadow: pressed ? '2px 2px 0 #000' : '4px 4px 0 #000',
+      boxShadow: pressed ? '2px 2px 0 #ff99cc' : '4px 4px 0 #ff99cc',
       cursor: 'pointer',
       marginBottom: 12,
       position: 'relative', overflow: 'hidden',
       transform: pressed ? 'translate(2px, 2px)' : 'translate(0,0)',
-      transition: 'transform 200ms, box-shadow 200ms',
+      transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms',
     }}>
+      {/* Manga halftone corner */}
+      <div style={{
+        position: 'absolute', bottom: 0, right: 0,
+        width: 80, height: 80,
+        backgroundImage: 'radial-gradient(rgba(255,153,204,0.5) 0.8px, transparent 1px)',
+        backgroundSize: '6px 6px',
+        maskImage: 'radial-gradient(70% 70% at 100% 100%, #000, transparent)',
+        WebkitMaskImage: 'radial-gradient(70% 70% at 100% 100%, #000, transparent)',
+        pointerEvents: 'none',
+      }}/>
       {/* Shimmer */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
-        backgroundSize: '40% 100%', backgroundRepeat: 'no-repeat',
-        animation: 'btnShimmer 2.4s linear infinite',
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
+        backgroundSize: '30% 100%', backgroundRepeat: 'no-repeat',
+        animation: 'btnShimmer 2.8s ease-in-out infinite',
       }}/>
       {/* Ripple */}
       {ripple && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'rgba(255,255,255,0.4)',
+          background: 'rgba(255,153,204,0.3)',
           borderRadius: 'inherit',
           animation: 'btnRipple 600ms ease-out forwards',
           pointerEvents: 'none',
         }}/>
       )}
-      <span style={{ fontSize: 22, position: 'relative', zIndex: 1 }}>📅</span>
+      <span style={{ fontSize: 24, position: 'relative', zIndex: 1, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}>📅</span>
       <span style={{ position: 'relative', zIndex: 1 }}>ОТКРЫТЬ КАЛЕНДАРЬ</span>
       <style>{`
-        @keyframes btnShimmer { from{background-position:-50% 0} to{background-position:150% 0} }
+        @keyframes btnShimmer { 0%,100%{background-position:-40% 0} 50%{background-position:140% 0} }
         @keyframes btnRipple { from{transform:scale(0);opacity:1} to{transform:scale(3);opacity:0} }
       `}</style>
     </button>
@@ -329,42 +385,6 @@ function StatCard({ emoji, label, value, accent }) {
 
 // ─── Manga secondary card ─────────────────────────────────────────────────────
 
-function MangaCard({ emoji, title, sub, onClick }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        flex: 1,
-        background: 'rgba(255,255,255,0.88)',
-        border: '2px solid #000', borderRadius: 14,
-        padding: '14px 12px',
-        cursor: 'pointer',
-        boxShadow: '3px 3px 0 #000',
-        position: 'relative', overflow: 'hidden',
-      }}
-    >
-      <div style={{ fontSize: 28, marginBottom: 8 }}>{emoji}</div>
-      <div style={{
-        fontFamily: '"Nunito", system-ui',
-        fontSize: 14, color: '#000', letterSpacing: 1,
-        marginBottom: 2,
-      }}>{title}</div>
-      <div style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: 1,
-        color: '#6a6a6a',
-      }}>{sub}</div>
-      {/* halftone corner */}
-      <div style={{
-        position: 'absolute', bottom: 0, right: 0,
-        width: 60, height: 60,
-        backgroundImage: 'radial-gradient(rgba(255,153,204,0.6) 0.7px, transparent 1px)',
-        backgroundSize: '5px 5px',
-        maskImage: 'radial-gradient(60% 60% at 100% 100%, #000, transparent)',
-        WebkitMaskImage: 'radial-gradient(60% 60% at 100% 100%, #000, transparent)',
-      }} />
-    </div>
-  )
-}
 
 
 // ─── Gojo Satoru SVG — chibi with blindfold ──────────────────────────────────
