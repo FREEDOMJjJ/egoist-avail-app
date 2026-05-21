@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { BC_COLORS, WEEKDAYS_RU_SHORT, MONTHS_RU, MONTHS_RU_LONG, isToday, isPast } from './bc-shared'
-import { PulseRing, InkSlash } from './bc-effects'
+import { PulseRing } from './bc-effects'
 
 // ── Карандашные аниме головы — 5 разных стилей ────────────────────────────
 // Нарисованы bezier-кривыми, имитируют карандашный штрих
@@ -304,15 +304,25 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
   }
 
   return (
-    <div style={{ position:'absolute', inset:0, zIndex:100 }}>
+    <div style={{ position:'fixed', inset:0, zIndex:9999 }}>
       {/* Backdrop */}
-      <div onClick={onClose} style={{ position:'absolute', inset:0, zIndex:0, background:'rgba(0,0,0,0.4)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', animation:'bcFade .28s ease-out' }}/>
-      {/* Modal content — поверх backdrop */}
-      <div style={{ position:'absolute', left:10, right:10, bottom:10, zIndex:1, background:'rgba(255,255,255,0.96)', border:'2px solid #000', borderRadius:22, padding:'20px 18px 16px', boxShadow:`6px 6px 0 ${BC_COLORS.pink}`, animation:'bcUnfold 400ms cubic-bezier(0.34,1.56,0.64,1) both', maxHeight:'88vh', overflowY:'auto', overflowX:'hidden', WebkitOverflowScrolling:'touch' }}>
+      <div
+        onClick={onClose}
+        style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(6px)', WebkitBackdropFilter:'blur(6px)' }}
+      />
+      {/* Modal sheet */}
+      <div style={{
+        position:'absolute', left:10, right:10, bottom:10,
+        background:'#fff', border:'2px solid #000', borderRadius:22,
+        padding:'20px 18px 24px',
+        boxShadow:`6px 6px 0 ${BC_COLORS.pink}`,
+        maxHeight:'85vh', overflowY:'auto', overflowX:'hidden',
+        WebkitOverflowScrolling:'touch',
+        animation:'bcUnfold 400ms cubic-bezier(0.34,1.56,0.64,1) both',
+      }}>
 
         {/* Halftone угол */}
-        <div style={{ position:'absolute',top:0,right:0,width:160,height:160,pointerEvents:'none',backgroundImage:'radial-gradient(rgba(67,97,238,0.35) 0.7px,transparent 1px)',backgroundSize:'6px 6px',maskImage:'radial-gradient(70% 70% at 100% 0%,#000 0%,transparent 70%)',WebkitMaskImage:'radial-gradient(70% 70% at 100% 0%,#000 0%,transparent 70%)',opacity:0.5 }}/>
-        <InkSlash k={slashKey}/>
+        <div style={{ position:'absolute',top:0,right:0,width:120,height:120,pointerEvents:'none',backgroundImage:'radial-gradient(rgba(67,97,238,0.3) 0.7px,transparent 1px)',backgroundSize:'6px 6px',maskImage:'radial-gradient(60% 60% at 100% 0%,#000 0%,transparent 70%)',WebkitMaskImage:'radial-gradient(60% 60% at 100% 0%,#000 0%,transparent 70%)',opacity:0.5,borderRadius:'inherit',overflow:'hidden' }}/>
 
         {/* Закрыть */}
         <button onClick={onClose} style={{ all:'unset',position:'absolute',top:12,right:12,zIndex:8,width:30,height:30,borderRadius:'50%',background:'#fff',border:'1.5px solid #000',display:'grid',placeItems:'center',cursor:'pointer',fontFamily:'"Nunito",system-ui',fontSize:16,fontWeight:800 }}>×</button>
