@@ -45,11 +45,13 @@ async function apiPost(path, body) {
 // ─── Root ────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
-  const [user, setUser]       = useState(null)
-  const [data, setData]       = useState(null)
-  const [view, setView]       = useState('home')
+  const [loading, setLoading]       = useState(true)
+  const [loaderDone, setLoaderDone] = useState(false)  // анимация завершена
+  const [tapped, setTapped]         = useState(false)  // тапнули для пропуска
+  const [error, setError]           = useState(null)
+  const [user, setUser]             = useState(null)
+  const [data, setData]             = useState(null)
+  const [view, setView]             = useState('home')
 
   const loadData = async () => {
     try {
@@ -68,13 +70,23 @@ export default function App() {
     }
   }
 
-  useEffect(() => { loadData() }, [])
+  // Минимальное время загрузки — 3800ms, потом можно тапнуть
+  useEffect(() => {
+    loadData()
+    const t = setTimeout(() => setLoaderDone(true), 3800)
+    return () => clearTimeout(t)
+  }, [])
 
-  if (loading) {
+  const showLoader = loading || (!loaderDone && !tapped)
+
+  if (showLoader) {
     return (
-      <div style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+      <div
+        style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}
+        onClick={() => { if (loaderDone) setTapped(true) }}
+      >
         <MangaBg petals={false} halftone={false} />
-        <MinimalLoader />
+        <MinimalLoader done={loaderDone} onTap={() => setTapped(true)} />
       </div>
     )
   }
@@ -576,37 +588,24 @@ function AvailView({ data, user, onBack, onReload }) {
     return () => clearTimeout(id)
   }, [])
 
-  const days      = generateDays(data.days_ahead || 14)
-  const timeSlots = data.time_slots || [
-    { id: 'morning', name: 'Утро',  emoji: '🌅', hours: '10-14' },
-    { id: 'day',     name: 'День',  emoji: '🌇', hours: '14-19' },
-    { id: 'evening', name: 'Вечер', emoji: '🌃', hours: '19-23' },
-  ]
+  const days     = generateDays(data.days_ahead || 14)
   const teamSize = data.team_size || 5
 
-  const slotsByKey = {}
-  data.slots.forEach(s => {
-    slotsByKey[`${s.slot_date}_${s.slot_time}`] = s
+  // Один слот на дату: { '2025-01-01': { can: [...], cant: [...] } }
+  const dayDataMap = {}
+  ;(data.slots || []).forEach(s => {
+    dayDataMap[s.slot_date] = { can: s.can || [], cant: s.cant || [] }
   })
 
-  function getDaySlots(dateKey) {
-    const obj = {}
-    timeSlots.forEach(ts => {
-      obj[ts.id] = slotsByKey[`${dateKey}_${ts.id}`] || { can: [], cant: [] }
-    })
-    return obj
-  }
+  const todayKey  = formatDateKey(new Date())
+  const todayBest = dayDataMap[todayKey]?.can?.length || 0
 
-  const todayKey   = formatDateKey(new Date())
-  const todaySlots = getDaySlots(todayKey)
-  const todayBest  = Math.max(0, ...timeSlots.map(ts => todaySlots[ts.id]?.can?.length || 0))
-
-  async function handlePick(slotId, status) {
+  async function handlePick(timeText, status) {
     if (!openDay) return
     hapticFeedback('medium')
     const dateKey = formatDateKey(openDay)
     try {
-      await apiPost('/api/availability', { slot_date: dateKey, slot_time: slotId, status })
+      await apiPost('/api/availability', { slot_date: dateKey, time_text: timeText, status })
       notificationFeedback('success')
       setRecentlyChanged(dateKey)
       setTimeout(() => setRecentlyChanged(null), 700)
@@ -664,8 +663,9 @@ function AvailView({ data, user, onBack, onReload }) {
                   {week1.map(d => {
                     const key = formatDateKey(d)
                     return (
-                      <DayCard key={key} date={d} daySlots={getDaySlots(key)}
-                        timeSlots={timeSlots} teamSize={teamSize}
+                      <DayCard key={key} date={d}
+                        dayData={dayDataMap[key] || { can: [], cant: [] }}
+                        teamSize={teamSize}
                         justChanged={recentlyChanged === key}
                         onClick={() => { hapticFeedback(); setOpenDay(d) }}
                       />
@@ -677,8 +677,9 @@ function AvailView({ data, user, onBack, onReload }) {
                   {week2.map(d => {
                     const key = formatDateKey(d)
                     return (
-                      <DayCard key={key} date={d} daySlots={getDaySlots(key)}
-                        timeSlots={timeSlots} teamSize={teamSize}
+                      <DayCard key={key} date={d}
+                        dayData={dayDataMap[key] || { can: [], cant: [] }}
+                        teamSize={teamSize}
                         justChanged={recentlyChanged === key}
                         onClick={() => { hapticFeedback(); setOpenDay(d) }}
                       />
@@ -724,8 +725,7 @@ function AvailView({ data, user, onBack, onReload }) {
       {openDay && (
         <DayModal
           date={openDay}
-          daySlots={getDaySlots(formatDateKey(openDay))}
-          timeSlots={timeSlots}
+          dayData={dayDataMap[formatDateKey(openDay)] || { can: [], cant: [] }}
           teamSize={teamSize}
           user={user}
           onPick={handlePick}
