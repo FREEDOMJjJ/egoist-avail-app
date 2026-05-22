@@ -25,7 +25,7 @@ import { Header, HpFooter, SkeletonHeader } from './bc-chrome'
 import { DayCard, WeekHeader, DayModal } from './bc-day'
 import { generateDays, formatDateKey, isToday } from './bc-shared'
 import { MangaMascotCard } from './bc-mascot'
-import { SettingsProvider, SettingsIcon, useSettings, sound, AnimeEyesHero } from './bc-settings'
+import { SettingsProvider, SettingsIcon, AnimeEyesHero } from './bc-settings'
 import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
@@ -36,15 +36,10 @@ function getTelegramInitData() {
 
 function hapticFeedback(type = 'light') {
   try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type) } catch (e) {}
-  try { sound.tap() } catch (e) {}
 }
 
 function notificationFeedback(type = 'success') {
   try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type) } catch (e) {}
-  try {
-    if (type === 'success') sound.success()
-    else if (type === 'error') sound.error()
-  } catch (e) {}
 }
 
 async function apiGet(path) {
@@ -80,24 +75,8 @@ export default function App() {
 }
 
 function AppInner() {
-  // Telegram Desktop тоже валиден — проверяем шире
-  const tgWA = window.Telegram?.WebApp
-  const isInTelegram = !!(tgWA?.version || tgWA?.initData || tgWA?.platform)
-  if (!isInTelegram) {
-    return (
-      <div style={{ position:'fixed', inset:0, background:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px', fontFamily:'"Nunito",sans-serif' }}>
-        <div style={{ fontSize:48, marginBottom:16 }}>✈️</div>
-        <div style={{ fontFamily:'"Permanent Marker",system-ui', fontSize:28, color:'#ff6eb4', marginBottom:12, letterSpacing:2 }}>EGOIST</div>
-        <div style={{ fontSize:14, color:'rgba(255,255,255,0.7)', textAlign:'center', lineHeight:1.6, marginBottom:24 }}>
-          Это приложение работает<br/>только внутри Telegram
-        </div>
-        <a href={`https://t.me/stratbook_bot?start=calendar`} style={{ padding:'14px 28px', background:'#ff6eb4', color:'#000', borderRadius:12, fontWeight:900, fontSize:15, textDecoration:'none', border:'2px solid #000', boxShadow:'3px 3px 0 #000' }}>
-          Открыть в Telegram
-        </a>
-      </div>
-    )
-  }
-
+  // Не блокируем по платформе — сервер сам проверит initData
+  // На Desktop Telegram WebApp объект может быть пустым но работать
   const [loading, setLoading]       = useState(true)
   const [loaderDone, setLoaderDone] = useState(false)  // анимация завершена
   const [tapped, setTapped]         = useState(false)  // тапнули для пропуска
