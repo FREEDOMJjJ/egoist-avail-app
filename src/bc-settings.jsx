@@ -96,100 +96,117 @@ function SakuraBackground() {
   useEffect(() => {
     const c = ref.current; if (!c) return
     const ctx = c.getContext('2d')
-    let w = c.width = window.innerWidth
+    let w = c.width  = window.innerWidth
     let h = c.height = window.innerHeight
     let raf
     const onResize = () => { w = c.width = window.innerWidth; h = c.height = window.innerHeight }
     window.addEventListener('resize', onResize)
 
-    const COLORS = ['#ffb3d9','#ff99cc','#ffc7e0','#ffd1e8','#ffe0f0']
-
-    // Каждый лепесток — 5 закруглённых лепестков вокруг центра (цветок сакуры)
-    function drawFlower(ctx, x, y, size, rot, alpha) {
+    // Форма реального лепестка сакуры:
+    // широкий округлый верх, слегка сужается к основанию с выемкой
+    function drawPetal(p) {
       ctx.save()
-      ctx.translate(x, y)
-      ctx.rotate(rot)
-      ctx.globalAlpha = alpha
-      for (let i = 0; i < 5; i++) {
-        ctx.save()
-        ctx.rotate((i * Math.PI * 2) / 5)
-        ctx.fillStyle = COLORS[i % COLORS.length]
+      ctx.translate(p.x, p.y)
+      ctx.rotate(p.rot)
+      ctx.globalAlpha = p.alpha
+
+      // Радиальный градиент — светлее в центре, темнее по краям
+      const g = ctx.createRadialGradient(-p.w * 0.15, -p.h * 0.2, 0, 0, 0, Math.max(p.w, p.h))
+      g.addColorStop(0,   p.light)
+      g.addColorStop(0.55, p.color)
+      g.addColorStop(1,   p.dark)
+      ctx.fillStyle = g
+
+      // Лепесток: широкий округлый, как у сакуры
+      ctx.beginPath()
+      ctx.moveTo(0, p.h * 0.9)
+      // левая сторона
+      ctx.bezierCurveTo(
+        -p.w * 1.1,  p.h * 0.4,
+        -p.w * 1.1, -p.h * 0.3,
+         0,          -p.h
+      )
+      // правая сторона
+      ctx.bezierCurveTo(
+         p.w * 1.1, -p.h * 0.3,
+         p.w * 1.1,  p.h * 0.4,
+         0,           p.h * 0.9
+      )
+      ctx.closePath()
+      ctx.fill()
+
+      // Тихая обводка для чёткости
+      ctx.strokeStyle = `rgba(255,255,255,0.18)`
+      ctx.lineWidth   = 0.5
+      ctx.stroke()
+
+      // Центральная прожилка
+      ctx.strokeStyle = `rgba(255,255,255,0.3)`
+      ctx.lineWidth   = 0.7
+      ctx.beginPath()
+      ctx.moveTo(0,  p.h * 0.75)
+      ctx.bezierCurveTo(0, p.h * 0.2, 0, -p.h * 0.4, 0, -p.h * 0.85)
+      ctx.stroke()
+
+      // Боковые прожилки (2 штуки)
+      ctx.strokeStyle = `rgba(255,255,255,0.15)`
+      ctx.lineWidth   = 0.5
+      ;[[-0.4, 0.3], [0.4, 0.3]].forEach(([dx, dy]) => {
         ctx.beginPath()
-        ctx.ellipse(0, -size * 0.55, size * 0.28, size * 0.42, 0, 0, Math.PI * 2)
-        ctx.fill()
-        // Прожилка
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)'
-        ctx.lineWidth = 0.4
-        ctx.beginPath()
-        ctx.moveTo(0, 0)
-        ctx.lineTo(0, -size * 0.9)
+        ctx.moveTo(0, p.h * 0.2)
+        ctx.bezierCurveTo(
+          p.w * dx * 0.6,  -p.h * 0.1,
+          p.w * dx * 1.0,  -p.h * dy,
+          p.w * dx * 0.8,  -p.h * 0.8
+        )
         ctx.stroke()
-        ctx.restore()
+      })
+
+      ctx.restore()
+    }
+
+    const PALETTES = [
+      { color:'#ffb3cf', light:'#ffe5ef', dark:'#f590b0' },
+      { color:'#ffc0d8', light:'#ffedf4', dark:'#f8a0c0' },
+      { color:'#ffd0e4', light:'#fff5f8', dark:'#f5b0cc' },
+      { color:'#f9a8c4', light:'#fde0ec', dark:'#e880a0' },
+    ]
+
+    const petals = Array.from({ length: 26 }, () => {
+      const pl   = PALETTES[Math.floor(Math.random() * PALETTES.length)]
+      const size = 9 + Math.random() * 13
+      return {
+        x:       Math.random() * w,
+        y:       Math.random() * h - h * 0.5,
+        w:       size * 0.44,
+        h:       size * 0.56,
+        vx:      -0.18 - Math.random() * 0.28,
+        vy:       0.48 + Math.random() * 0.52,
+        rot:     Math.random() * Math.PI * 2,
+        rotV:    (Math.random() - 0.5) * 0.018,
+        wobble:  Math.random() * Math.PI * 2,
+        wobbleA: 0.22 + Math.random() * 0.28,
+        wobbleS: 0.006 + Math.random() * 0.009,
+        alpha:   0.52 + Math.random() * 0.28,
+        ...pl,
       }
-      // Центр
-      ctx.fillStyle = '#fff'
-      ctx.globalAlpha = alpha * 0.8
-      ctx.beginPath()
-      ctx.arc(0, 0, size * 0.12, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
-    }
-
-    // Отдельные лепестки
-    function drawPetal(ctx, x, y, size, rot, alpha) {
-      ctx.save()
-      ctx.translate(x, y)
-      ctx.rotate(rot)
-      ctx.globalAlpha = alpha
-      ctx.fillStyle = COLORS[Math.floor(Math.random() * COLORS.length)]
-      ctx.beginPath()
-      ctx.moveTo(0, -size)
-      ctx.bezierCurveTo(size * 0.5, -size * 0.7, size * 0.6, size * 0.5, 0, size)
-      ctx.bezierCurveTo(-size * 0.6, size * 0.5, -size * 0.5, -size * 0.7, 0, -size)
-      ctx.fill()
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)'
-      ctx.lineWidth = 0.5
-      ctx.beginPath(); ctx.moveTo(0,-size*0.7); ctx.lineTo(0,size*0.7); ctx.stroke()
-      ctx.restore()
-    }
-
-    const particles = Array.from({ length: 30 }, (_, i) => ({
-      x: Math.random() * w,
-      y: Math.random() * h - h * 0.5,
-      size: 4 + Math.random() * 7,
-      vx: -0.15 - Math.random() * 0.3,
-      vy: 0.5 + Math.random() * 0.7,
-      rot: Math.random() * Math.PI * 2,
-      rotV: (Math.random() - 0.5) * 0.025,
-      wobble: Math.random() * Math.PI * 2,
-      wobbleA: 0.3 + Math.random() * 0.4,
-      wobbleS: 0.008 + Math.random() * 0.012,
-      alpha: 0.5 + Math.random() * 0.35,
-      isFlower: i < 6, // первые 6 — полные цветки
-      colorIdx: Math.floor(Math.random() * COLORS.length),
-    }))
+    })
 
     function loop() {
       ctx.clearRect(0, 0, w, h)
-      for (const p of particles) {
+      for (const p of petals) {
         p.wobble += p.wobbleS
         p.x += p.vx + Math.sin(p.wobble) * p.wobbleA
-        p.y += p.vy + Math.cos(p.wobble * 0.7) * 0.15
+        p.y += p.vy + Math.cos(p.wobble * 0.55) * 0.1
         p.rot += p.rotV
-        if (p.y > h + 40) { p.y = -40; p.x = Math.random() * w + 80 }
-        if (p.x < -40)    { p.x = w + 20 }
-        if (p.isFlower) {
-          drawFlower(ctx, p.x, p.y, p.size, p.rot, p.alpha)
-        } else {
-          ctx.save()
-          ctx.fillStyle = COLORS[p.colorIdx]
-          drawPetal(ctx, p.x, p.y, p.size, p.rot, p.alpha)
-          ctx.restore()
-        }
+        if (p.y > h + 30) { p.y = -30; p.x = Math.random() * w + 60 }
+        if (p.x < -30)    { p.x = w + 20 }
+        drawPetal(p)
       }
       raf = requestAnimationFrame(loop)
     }
     loop()
+
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize) }
   }, [])
   return <canvas ref={ref} style={{ position:'fixed',inset:0,zIndex:0,pointerEvents:'none' }}/>
@@ -523,7 +540,7 @@ const ANIME_CHARS = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// GRADIENT AVATARS — Notion/Linear style, unique per player
+// MONOGRAM AVATARS — первая буква имени на градиентном фоне
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const GRADIENTS = [
@@ -537,40 +554,58 @@ const GRADIENTS = [
   ['#30cfd0','#667eea'],  // teal-blue
 ]
 
-export function AnimeAvatar({ playerIndex = 0, status = 'pending', size = 36 }) {
-  const ring  = status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#4b5563'
-  const glow  = status === 'can'
-    ? '0 0 0 1px #22c55e, 0 0 10px rgba(34,197,94,0.4)'
+export function AnimeAvatar({ playerIndex = 0, status = 'pending', size = 36, name = '' }) {
+  const ring   = status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#4b5563'
+  const glow   = status === 'can'
+    ? `0 0 0 2px #22c55e, 0 0 10px rgba(34,197,94,0.45)`
     : status === 'cant'
-    ? '0 0 0 1px #ef4444, 0 0 10px rgba(239,68,68,0.4)'
-    : '0 0 0 1px #4b5563'
+    ? `0 0 0 2px #ef4444, 0 0 10px rgba(239,68,68,0.35)`
+    : `0 0 0 2px #4b5563`
+
   const [a, b] = GRADIENTS[playerIndex % GRADIENTS.length]
-  const id = `gr${playerIndex}`
+  const id     = `mg_${playerIndex}`
+  const letter = (name || '?').charAt(0).toUpperCase()
+  const fs     = Math.round(size * 0.44)
 
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      boxShadow: glow, flexShrink: 0, overflow: 'hidden',
-      display: 'inline-block',
+      boxShadow: glow, flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
     }}>
-      <svg viewBox="0 0 36 36" width={size} height={size}>
+      <svg viewBox="0 0 36 36" width={size} height={size} style={{ position:'absolute',inset:0 }}>
         <defs>
-          <radialGradient id={id} cx="35%" cy="30%" r="65%">
+          <radialGradient id={id} cx="30%" cy="25%" r="75%">
             <stop offset="0%"   stopColor={a}/>
             <stop offset="100%" stopColor={b}/>
           </radialGradient>
         </defs>
+        {/* Основной круг */}
         <circle cx="18" cy="18" r="18" fill={`url(#${id})`}/>
-        {/* subtle inner noise pattern */}
-        <circle cx="12" cy="12" r="6" fill="rgba(255,255,255,0.07)"/>
-        <circle cx="24" cy="22" r="8" fill="rgba(0,0,0,0.08)"/>
-        {/* status indicator dot */}
+        {/* Световое пятно сверху-слева — depth effect */}
+        <circle cx="11" cy="10" r="8" fill="rgba(255,255,255,0.12)"/>
+        {/* Тёмная тень снизу */}
+        <ellipse cx="18" cy="28" rx="14" ry="8" fill="rgba(0,0,0,0.15)"/>
+        {/* Статус-точка */}
         {status !== 'pending' && (
-          <circle cx="28" cy="28" r="4.5"
+          <circle cx="27.5" cy="27.5" r="5"
             fill={status === 'can' ? '#22c55e' : '#ef4444'}
-            stroke="#fff" strokeWidth="1.5"/>
+            stroke="#fff" strokeWidth="2"/>
         )}
       </svg>
+      {/* Буква поверх */}
+      <span style={{
+        position: 'relative', zIndex: 1,
+        fontFamily: '"Nunito", system-ui',
+        fontWeight: 900,
+        fontSize: fs,
+        color: '#fff',
+        lineHeight: 1,
+        textShadow: '0 1px 4px rgba(0,0,0,0.35)',
+        letterSpacing: -0.5,
+        userSelect: 'none',
+      }}>{letter}</span>
     </div>
   )
 }
