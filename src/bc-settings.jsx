@@ -230,27 +230,33 @@ export function AnimeEyesHero({ ready }) {
       marginBottom: 16,
       background: '#fff',
     }}>
-      {/* Картинка — верхняя половина */}
+      {/* Гифка — верхняя половина */}
       <div style={{
-        height: 130,
-        backgroundImage: 'url(/hero1.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
-        backgroundRepeat: 'no-repeat',
+        height: 140,
         position: 'relative',
+        overflow: 'hidden',
+        background: '#000',
       }}>
-        {/* Тёмный градиент снизу для плавного перехода */}
+        <img
+          src="/giphy.gif"
+          alt=""
+          style={{
+            position: 'absolute',
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            display: 'block',
+          }}
+        />
+        {/* Градиент снизу */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.55) 100%)',
+          background: 'linear-gradient(to bottom, transparent 40%, rgba(255,255,255,0.9) 100%)',
+          pointerEvents: 'none',
         }}/>
-        {/* Manga speed lines — как в хедере календаря */}
-        <svg viewBox="0 0 300 130" width="100%" height="130" style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:0.25 }}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <line key={i} x1={180 + i*18} y1={2} x2={300} y2={20 + i*18}
-              stroke="#fff" strokeWidth={i%2 ? 0.5 : 1} strokeLinecap="round"/>
-          ))}
-        </svg>
       </div>
 
       {/* Нижняя панель — белая как карточки */}
