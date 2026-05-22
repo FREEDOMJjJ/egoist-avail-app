@@ -224,7 +224,6 @@ export function AnimeEyesHero({ ready }) {
       height: 160,
       borderRadius: 16,
       overflow: 'hidden',
-      background: '#000',
       border: '2px solid #000',
       boxShadow: '4px 4px 0 #ff99cc',
       marginBottom: 16,
@@ -232,19 +231,21 @@ export function AnimeEyesHero({ ready }) {
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      {/* Тёмный фон с мягким свечением */}
+      {/* Фоновая картинка */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'url(/1)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}/>
+      {/* Тёмный оверлей для читаемости текста */}
       <div style={{
         position: 'absolute', inset: 0,
         background: isHype
-          ? 'radial-gradient(ellipse 90% 70% at 50% 50%, rgba(120,0,0,0.6) 0%, #000 70%)'
-          : 'radial-gradient(ellipse 90% 70% at 50% 50%, rgba(40,0,80,0.7) 0%, #000 70%)',
+          ? 'rgba(80,0,0,0.55)'
+          : 'rgba(10,0,20,0.6)',
         transition: 'background 1s',
-      }}/>
-      {/* Тонкая сетка */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.07,
-        backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
       }}/>
 
       {/* Текст */}
@@ -254,13 +255,14 @@ export function AnimeEyesHero({ ready }) {
             <div style={{
               fontFamily: '"Permanent Marker", system-ui',
               fontSize: 36, letterSpacing: 4, color: '#ff2222',
-              textShadow: '0 0 20px rgba(255,0,0,0.8), 0 0 40px rgba(255,0,0,0.4)',
+              textShadow: '0 0 20px rgba(255,0,0,0.9), 0 0 40px rgba(255,0,0,0.5), 0 2px 4px rgba(0,0,0,0.8)',
               animation: 'heroHype 1s ease-in-out infinite',
             }}>ПОГНАЛИ</div>
             <div style={{
               fontFamily: '"Nunito", system-ui', fontWeight: 900,
-              fontSize: 12, letterSpacing: 3, color: 'rgba(255,80,80,0.7)',
+              fontSize: 12, letterSpacing: 3, color: 'rgba(255,120,120,0.9)',
               marginTop: 8, textTransform: 'uppercase',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
             }}>ГАЗ · ЕБАШИТЬСЯ · {ready}/5 ГОТОВЫ</div>
           </>
         ) : (
@@ -268,13 +270,14 @@ export function AnimeEyesHero({ ready }) {
             <div style={{
               fontFamily: '"Permanent Marker", system-ui',
               fontSize: 32, letterSpacing: 4, color: '#fff',
-              textShadow: '0 0 16px rgba(153,102,255,0.7), 0 0 32px rgba(153,102,255,0.3)',
+              textShadow: '0 0 16px rgba(180,120,255,0.8), 0 0 32px rgba(120,80,255,0.4), 0 2px 8px rgba(0,0,0,0.9)',
               animation: 'heroFloat 2.8s ease-in-out infinite',
             }}>ВЫ ГОТОВЫ?</div>
             <div style={{
               fontFamily: '"Nunito", system-ui', fontWeight: 900,
-              fontSize: 11, letterSpacing: 3, color: 'rgba(180,150,255,0.6)',
+              fontSize: 11, letterSpacing: 3, color: 'rgba(200,170,255,0.85)',
               marginTop: 8,
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
             }}>EGOIST · CS2 · SQUAD</div>
           </>
         )}
