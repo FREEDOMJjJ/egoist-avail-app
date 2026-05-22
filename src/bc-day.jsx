@@ -18,7 +18,7 @@ export function DayCard({ date, dayData, teamSize, onClick, justChanged }) {
   const full = canCount >= teamSize
   const almost = canCount >= teamSize - 1 && !full
 
-  const statusLabel = full ? 'СОСТАВ ГОТОВ' : almost ? 'ПОЧТИ ГОТОВ' : canCount > 0 ? `${canCount} ГОТОВЫ` : 'ЖДЁМ ВСЕХ'
+  const statusLabel = full ? 'СОСТАВ ГОТОВ' : almost ? 'ПОЧТИ СОСТАВ СОБРАН' : canCount > 0 ? `${canCount} ГОТОВЫ` : 'ЖДЁМ ВСЕХ'
 
   return (
     <button onClick={onClick} style={{
@@ -50,11 +50,16 @@ export function DayCard({ date, dayData, teamSize, onClick, justChanged }) {
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:6 }}>
             {Array.from({ length: teamSize }).map((_, i) => {
-              const canPlayer  = dayData?.can?.[i]
-              const cantPlayer = !canPlayer ? dayData?.cant?.[i - canCount] : null
-              const player     = canPlayer || cantPlayer
-              const status     = canPlayer ? 'can' : cantPlayer ? 'cant' : 'pending'
-              const name       = player?.display_name || player?.username || null
+              // Сначала все "can", потом все "cant", остаток — pending
+              const canPlayers  = dayData?.can  || []
+              const cantPlayers = dayData?.cant || []
+              let player = null, status = 'pending'
+              if (i < canPlayers.length) {
+                player = canPlayers[i]; status = 'can'
+              } else if (i < canPlayers.length + cantPlayers.length) {
+                player = cantPlayers[i - canPlayers.length]; status = 'cant'
+              }
+              const name = player?.display_name || player?.username || null
               return (
                 <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
                   <AnimeAvatar playerIndex={i} status={status} size={32} name={name || ""}/>
