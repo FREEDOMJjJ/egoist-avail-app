@@ -234,10 +234,11 @@ export function AnimeEyesHero({ ready }) {
       {/* Фоновая картинка */}
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: 'url(/1)',
+        backgroundImage: 'url(/hero.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        backgroundColor: '#0a0010',
       }}/>
       {/* Тёмный оверлей для читаемости текста */}
       <div style={{
@@ -543,71 +544,51 @@ const ANIME_CHARS = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MONOGRAM AVATARS — первая буква имени на градиентном фоне
+// MONOGRAM AVATARS — ч/б манга стиль, как карточки календаря
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const GRADIENTS = [
-  ['#667eea','#764ba2'],  // violet-blue
-  ['#f093fb','#f5576c'],  // pink-red
-  ['#4facfe','#00f2fe'],  // sky-cyan
-  ['#43e97b','#38f9d7'],  // green-mint
-  ['#fa709a','#fee140'],  // pink-gold
-  ['#a18cd1','#fbc2eb'],  // lavender-blush
-  ['#fccb90','#d57eeb'],  // peach-purple
-  ['#30cfd0','#667eea'],  // teal-blue
-]
-
 export function AnimeAvatar({ playerIndex = 0, status = 'pending', size = 36, name = '' }) {
-  const ring   = status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#4b5563'
-  const glow   = status === 'can'
-    ? `0 0 0 2px #22c55e, 0 0 10px rgba(34,197,94,0.45)`
-    : status === 'cant'
-    ? `0 0 0 2px #ef4444, 0 0 10px rgba(239,68,68,0.35)`
-    : `0 0 0 2px #4b5563`
-
-  const [a, b] = GRADIENTS[playerIndex % GRADIENTS.length]
-  const id     = `mg_${playerIndex}`
   const letter = (name || '?').charAt(0).toUpperCase()
-  const fs     = Math.round(size * 0.44)
+  const fs     = Math.round(size * 0.42)
+
+  const bg     = status === 'pending' ? '#f5f5f5' : '#fff'
+  const border = status === 'can'  ? '#22c55e'
+               : status === 'cant' ? '#ef4444'
+               : 'rgba(0,0,0,0.25)'
+  const shadow = status === 'can'  ? '0 0 0 2px #22c55e, 0 0 8px rgba(34,197,94,0.4)'
+               : status === 'cant' ? '0 0 0 2px #ef4444, 0 0 8px rgba(239,68,68,0.4)'
+               : '0 0 0 1.5px rgba(0,0,0,0.2)'
+  const textColor = status === 'can'  ? '#22c55e'
+                  : status === 'cant' ? '#ef4444'
+                  : '#9a9a9a'
 
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      boxShadow: glow, flexShrink: 0,
+      background: bg,
+      border: `2px solid ${border}`,
+      boxShadow: shadow,
+      flexShrink: 0,
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden',
+      position: 'relative',
     }}>
-      <svg viewBox="0 0 36 36" width={size} height={size} style={{ position:'absolute',inset:0 }}>
-        <defs>
-          <radialGradient id={id} cx="30%" cy="25%" r="75%">
-            <stop offset="0%"   stopColor={a}/>
-            <stop offset="100%" stopColor={b}/>
-          </radialGradient>
-        </defs>
-        {/* Основной круг */}
-        <circle cx="18" cy="18" r="18" fill={`url(#${id})`}/>
-        {/* Световое пятно сверху-слева — depth effect */}
-        <circle cx="11" cy="10" r="8" fill="rgba(255,255,255,0.12)"/>
-        {/* Тёмная тень снизу */}
-        <ellipse cx="18" cy="28" rx="14" ry="8" fill="rgba(0,0,0,0.15)"/>
-        {/* Статус-точка */}
-        {status !== 'pending' && (
-          <circle cx="27.5" cy="27.5" r="5"
-            fill={status === 'can' ? '#22c55e' : '#ef4444'}
-            stroke="#fff" strokeWidth="2"/>
-        )}
-      </svg>
-      {/* Буква поверх */}
+      {/* Halftone уголок — как на карточках */}
+      {status === 'can' && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden', pointerEvents: 'none',
+          backgroundImage: 'radial-gradient(rgba(34,197,94,0.25) 0.6px, transparent 1px)',
+          backgroundSize: '4px 4px',
+          maskImage: 'radial-gradient(60% 60% at 100% 0%, #000, transparent)',
+          WebkitMaskImage: 'radial-gradient(60% 60% at 100% 0%, #000, transparent)',
+        }}/>
+      )}
       <span style={{
-        position: 'relative', zIndex: 1,
-        fontFamily: '"Nunito", system-ui',
-        fontWeight: 900,
+        fontFamily: '"Permanent Marker", system-ui',
         fontSize: fs,
-        color: '#fff',
+        color: textColor,
         lineHeight: 1,
-        textShadow: '0 1px 4px rgba(0,0,0,0.35)',
-        letterSpacing: -0.5,
         userSelect: 'none',
+        position: 'relative', zIndex: 1,
       }}>{letter}</span>
     </div>
   )
