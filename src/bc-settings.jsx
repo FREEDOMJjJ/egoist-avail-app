@@ -218,75 +218,105 @@ function SakuraBackground() {
 // ═══════════════════════════════════════════════════════════════════════════════
 export function AnimeEyesHero({ ready }) {
   const isHype = ready >= 3
+  const pct = Math.round((ready / 5) * 100)
+
   return (
     <div style={{
       position: 'relative',
-      height: 160,
       borderRadius: 16,
       overflow: 'hidden',
-      border: '2px solid #000',
-      boxShadow: '4px 4px 0 #ff99cc',
+      border: isHype ? '2px solid #000' : '2px solid #000',
+      boxShadow: isHype ? '4px 4px 0 #000' : '4px 4px 0 #ff99cc',
       marginBottom: 16,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      background: '#fff',
     }}>
-      {/* Фоновая картинка */}
+      {/* Картинка — верхняя половина */}
       <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'url(/hero.jpg)',
+        height: 130,
+        backgroundImage: 'url(/hero1.jpg)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
-        backgroundColor: '#0a0010',
-      }}/>
-      {/* Тёмный оверлей для читаемости текста */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: isHype
-          ? 'rgba(80,0,0,0.55)'
-          : 'rgba(10,0,20,0.6)',
-        transition: 'background 1s',
-      }}/>
+        position: 'relative',
+      }}>
+        {/* Тёмный градиент снизу для плавного перехода */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.55) 100%)',
+        }}/>
+        {/* Manga speed lines — как в хедере календаря */}
+        <svg viewBox="0 0 300 130" width="100%" height="130" style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:0.25 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <line key={i} x1={180 + i*18} y1={2} x2={300} y2={20 + i*18}
+              stroke="#fff" strokeWidth={i%2 ? 0.5 : 1} strokeLinecap="round"/>
+          ))}
+        </svg>
+      </div>
 
-      {/* Текст */}
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-        {isHype ? (
-          <>
+      {/* Нижняя панель — белая как карточки */}
+      <div style={{
+        background: '#fff',
+        padding: '10px 14px 12px',
+        position: 'relative',
+      }}>
+        {/* Halftone уголок */}
+        <div style={{
+          position:'absolute', top:0, right:0, width:80, height:80, pointerEvents:'none',
+          backgroundImage:'radial-gradient(rgba(67,97,238,0.2) 0.6px,transparent 1px)',
+          backgroundSize:'5px 5px',
+          maskImage:'radial-gradient(60% 60% at 100% 0%,#000,transparent)',
+          WebkitMaskImage:'radial-gradient(60% 60% at 100% 0%,#000,transparent)',
+        }}/>
+
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+          {/* Текст */}
+          <div>
             <div style={{
-              fontFamily: '"Permanent Marker", system-ui',
-              fontSize: 36, letterSpacing: 4, color: '#ff2222',
-              textShadow: '0 0 20px rgba(255,0,0,0.9), 0 0 40px rgba(255,0,0,0.5), 0 2px 4px rgba(0,0,0,0.8)',
-              animation: 'heroHype 1s ease-in-out infinite',
-            }}>ПОГНАЛИ</div>
+              fontFamily:'"Permanent Marker",system-ui',
+              fontSize: isHype ? 22 : 20,
+              letterSpacing: 2,
+              color: isHype ? '#000' : '#000',
+              lineHeight: 1.1,
+              animation: isHype ? 'heroHype 1s ease-in-out infinite' : 'heroFloat 3s ease-in-out infinite',
+            }}>
+              {isHype ? 'ПОГНАЛИ' : 'ВЫ ГОТОВЫ?'}
+            </div>
             <div style={{
-              fontFamily: '"Nunito", system-ui', fontWeight: 900,
-              fontSize: 12, letterSpacing: 3, color: 'rgba(255,120,120,0.9)',
-              marginTop: 8, textTransform: 'uppercase',
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-            }}>ГАЗ · ЕБАШИТЬСЯ · {ready}/5 ГОТОВЫ</div>
-          </>
-        ) : (
-          <>
+              fontFamily:'"Nunito",system-ui', fontWeight:800,
+              fontSize:10, letterSpacing:2, color:'#6a6a6a',
+              marginTop:4,
+            }}>
+              {isHype ? `ГАЗ · ЕБАШИТЬСЯ · ${ready}/5 В ДЕЛЕ` : 'EGOIST · CS2 · 5v5'}
+            </div>
+          </div>
+
+          {/* Мини прогресс */}
+          <div style={{ flexShrink:0, textAlign:'right' }}>
             <div style={{
-              fontFamily: '"Permanent Marker", system-ui',
-              fontSize: 32, letterSpacing: 4, color: '#fff',
-              textShadow: '0 0 16px rgba(180,120,255,0.8), 0 0 32px rgba(120,80,255,0.4), 0 2px 8px rgba(0,0,0,0.9)',
-              animation: 'heroFloat 2.8s ease-in-out infinite',
-            }}>ВЫ ГОТОВЫ?</div>
+              fontFamily:'"Permanent Marker",system-ui',
+              fontSize:28, lineHeight:1, color:'#000', letterSpacing:-1,
+            }}>{ready}<span style={{ fontSize:16, color:'#9a9a9a' }}>/5</span></div>
             <div style={{
-              fontFamily: '"Nunito", system-ui', fontWeight: 900,
-              fontSize: 11, letterSpacing: 3, color: 'rgba(200,170,255,0.85)',
-              marginTop: 8,
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-            }}>EGOIST · CS2 · SQUAD</div>
-          </>
-        )}
+              display:'flex', gap:3, marginTop:5, justifyContent:'flex-end',
+            }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{
+                  width:12, height:4, borderRadius:999,
+                  background: i < ready
+                    ? (isHype ? '#000' : '#ff99cc')
+                    : 'rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(0,0,0,0.15)',
+                  transition:`background ${200+i*60}ms ease`,
+                }}/>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <style>{`
-        @keyframes heroHype  { 0%,100%{transform:scale(1)}   50%{transform:scale(1.05)} }
-        @keyframes heroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+        @keyframes heroHype  { 0%,100%{transform:scale(1)}   50%{transform:scale(1.03)} }
+        @keyframes heroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
       `}</style>
     </div>
   )
