@@ -805,6 +805,7 @@ function AvailView({ data, user, onBack, onReload }) {
   const [refreshing, setRefreshing] = useState(false)
   const touchStartY = useRef(0)
   const scrollRef   = useRef(null)
+  const pullYRef    = useRef(0)  // ref для чтения внутри closure
   const PULL_THRESHOLD = 64
 
   // Pull-to-refresh через useEffect — единственный способ получить passive:false
@@ -828,7 +829,9 @@ function AvailView({ data, user, onBack, onReload }) {
         e.preventDefault() // работает только с passive:false
         pulling = true
         setPulling(true)
-        setPullY(Math.min(dy * 0.45, PULL_THRESHOLD + 16))
+const v = Math.min(dy * 0.45, PULL_THRESHOLD + 16)
+        pullYRef.current = v
+        setPullY(v)
       }
     }
 
@@ -836,14 +839,19 @@ function AvailView({ data, user, onBack, onReload }) {
       if (!pulling) return
       pulling = false
       setPulling(false)
-      setPullY(prev => {
-        if (prev >= PULL_THRESHOLD) {
-          setRefreshing(true)
-          hapticFeedback('medium')
-          onReload().finally(() => setRefreshing(false))
+      const currentY = pullYRef.current
+      setPullY(0)
+      if (currentY >= PULL_THRESHOLD) {
+        setRefreshing(true)
+        hapticFeedback('medium')
+        try {
+          await onReload()
+        } catch(e) {
+          console.error('refresh error:', e)
+        } finally {
+          setRefreshing(false)
         }
-        return 0
-      })
+      }
     }
 
     el.addEventListener('touchstart', onStart, { passive: true })
