@@ -163,15 +163,12 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
     setSaving(true)
     try {
       let timeText = 'ALL DAY'
-      if (preset) {
-        timeText = preset.toUpperCase()
-      } else if (timeFrom && timeTo) {
-        timeText = `${timeFrom}-${timeTo}`
-      } else if (timeFrom) {
-        timeText = timeFrom
-      }
+      if (preset) timeText = preset.toUpperCase()
+      else if (timeFrom && timeTo) timeText = `${timeFrom}-${timeTo}`
+      else if (timeFrom) timeText = timeFrom
       const newStatus = myStatus === 'can' ? 'clear' : 'can'
       await onPick(timeText, newStatus)
+      onClose()
     } catch(e) {
       console.error('handleCan:', e)
     } finally {
@@ -185,6 +182,7 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
     try {
       const newStatus = myStatus === 'cant' ? 'clear' : 'cant'
       await onPick('anytime', newStatus)
+      onClose()
     } catch(e) {
       console.error('handleCant:', e)
     } finally {
