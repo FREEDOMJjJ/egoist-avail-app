@@ -150,8 +150,13 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
   }, [myId])
 
   function selectPreset(id) {
-    setPreset(id)
-    setTimeFrom(''); setTimeTo('')
+    // Повторный тап — снять пресет
+    if (preset === id) {
+      setPreset(null)
+    } else {
+      setPreset(id)
+      setTimeFrom(''); setTimeTo('')
+    }
   }
 
   function onFromChange(v) {
@@ -168,7 +173,7 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
       else if (timeFrom) timeText = timeFrom
       const newStatus = myStatus === 'can' ? 'clear' : 'can'
       await onPick(timeText, newStatus)
-      onClose()
+      // Не закрываем — пользователь видит что отметился (зелёная кнопка)
     } catch(e) {
       console.error('handleCan:', e)
     } finally {
@@ -182,7 +187,7 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
     try {
       const newStatus = myStatus === 'cant' ? 'clear' : 'cant'
       await onPick('anytime', newStatus)
-      onClose()
+      // Не закрываем
     } catch(e) {
       console.error('handleCant:', e)
     } finally {
