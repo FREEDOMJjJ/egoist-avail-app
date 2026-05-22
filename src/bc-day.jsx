@@ -218,7 +218,16 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
         <div style={{ position:'absolute',top:0,right:0,width:120,height:120,pointerEvents:'none',backgroundImage:'radial-gradient(rgba(67,97,238,0.3) 0.7px,transparent 1px)',backgroundSize:'6px 6px',maskImage:'radial-gradient(60% 60% at 100% 0%,#000 0%,transparent 70%)',WebkitMaskImage:'radial-gradient(60% 60% at 100% 0%,#000 0%,transparent 70%)',opacity:0.5,borderRadius:'inherit',overflow:'hidden' }}/>
 
         {/* Закрыть */}
-        <button onClick={onClose} style={{ all:'unset',position:'absolute',top:12,right:12,zIndex:8,width:30,height:30,borderRadius:'50%',background:'#fff',border:'1.5px solid #000',display:'grid',placeItems:'center',cursor:'pointer',fontFamily:'"Nunito",system-ui',fontSize:16,fontWeight:800 }}>×</button>
+        <button onClick={onClose} style={{
+          position:'absolute', top:14, right:14, zIndex:10,
+          width:34, height:34, borderRadius:'50%',
+          background:'#000', border:'2px solid #000',
+          display:'grid', placeItems:'center', cursor:'pointer',
+          boxShadow:'0 2px 8px rgba(0,0,0,0.3)',
+          fontSize:18, fontWeight:900, color:'#fff',
+          fontFamily:'"Nunito",system-ui',
+          lineHeight:1,
+        }}>×</button>
 
         {/* Заголовок */}
         <div style={{ position:'relative',zIndex:2 }}>
