@@ -276,34 +276,8 @@ export function AnimeEyesHero({ ready }) {
 // Стиль Hunter x Hunter / Solo Leveling — с лицами, без фигур
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function AnimeAvatar({ playerIndex = 0, status = 'pending', size = 36 }) {
-  const ring = status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#4b5563'
-  const glow = status === 'can' ? '0 0 8px rgba(34,197,94,0.5)' : status === 'cant' ? '0 0 8px rgba(239,68,68,0.5)' : 'none'
-  const idx = playerIndex % ANIME_CHARS.length
-  const Char = ANIME_CHARS[idx]
-  return (
-    <div style={{
-      borderRadius:'50%', border:`2.5px solid ${ring}`,
-      boxShadow: glow, display:'inline-flex',
-      alignItems:'center', justifyContent:'center',
-      background: ANIME_BG[idx], flexShrink:0,
-      overflow:'hidden', width:size, height:size,
-    }}>
-      <Char size={size}/>
-    </div>
-  )
-}
 
-const ANIME_BG = [
-  '#0d0020', // 0 - тёмно-фиолетовый
-  '#001428', // 1 - тёмно-синий
-  '#1a0000', // 2 - тёмно-красный
-  '#001a0d', // 3 - тёмно-зелёный
-  '#1a1400', // 4 - тёмно-золотой
-  '#0a0a14', // 5 - тёмно-серый
-  '#1a000f', // 6 - тёмно-малиновый
-  '#000f1a', // 7 - тёмно-циановый
-]
+
 
 const ANIME_CHARS = [
   // 0 — Solo Leveling style: тёмные волосы, синие глаза, шрам
@@ -547,3 +521,56 @@ const ANIME_CHARS = [
     </svg>
   ),
 ]
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GRADIENT AVATARS — Notion/Linear style, unique per player
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GRADIENTS = [
+  ['#667eea','#764ba2'],  // violet-blue
+  ['#f093fb','#f5576c'],  // pink-red
+  ['#4facfe','#00f2fe'],  // sky-cyan
+  ['#43e97b','#38f9d7'],  // green-mint
+  ['#fa709a','#fee140'],  // pink-gold
+  ['#a18cd1','#fbc2eb'],  // lavender-blush
+  ['#fccb90','#d57eeb'],  // peach-purple
+  ['#30cfd0','#667eea'],  // teal-blue
+]
+
+export function AnimeAvatar({ playerIndex = 0, status = 'pending', size = 36 }) {
+  const ring  = status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#4b5563'
+  const glow  = status === 'can'
+    ? '0 0 0 1px #22c55e, 0 0 10px rgba(34,197,94,0.4)'
+    : status === 'cant'
+    ? '0 0 0 1px #ef4444, 0 0 10px rgba(239,68,68,0.4)'
+    : '0 0 0 1px #4b5563'
+  const [a, b] = GRADIENTS[playerIndex % GRADIENTS.length]
+  const id = `gr${playerIndex}`
+
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      boxShadow: glow, flexShrink: 0, overflow: 'hidden',
+      display: 'inline-block',
+    }}>
+      <svg viewBox="0 0 36 36" width={size} height={size}>
+        <defs>
+          <radialGradient id={id} cx="35%" cy="30%" r="65%">
+            <stop offset="0%"   stopColor={a}/>
+            <stop offset="100%" stopColor={b}/>
+          </radialGradient>
+        </defs>
+        <circle cx="18" cy="18" r="18" fill={`url(#${id})`}/>
+        {/* subtle inner noise pattern */}
+        <circle cx="12" cy="12" r="6" fill="rgba(255,255,255,0.07)"/>
+        <circle cx="24" cy="22" r="8" fill="rgba(0,0,0,0.08)"/>
+        {/* status indicator dot */}
+        {status !== 'pending' && (
+          <circle cx="28" cy="28" r="4.5"
+            fill={status === 'can' ? '#22c55e' : '#ef4444'}
+            stroke="#fff" strokeWidth="1.5"/>
+        )}
+      </svg>
+    </div>
+  )
+}
