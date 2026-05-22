@@ -797,19 +797,48 @@ function AvailView({ data, user, onBack, onReload }) {
   const [openDay, setOpenDay]           = useState(null)
   const [recentlyChanged, setRecentlyChanged] = useState(null)
   const [skeletonDone, setSkeletonDone] = useState(false)
-  // Локальный стейт для оптимистичных обновлений
   const [localSlots, setLocalSlots]     = useState(null)
+
+  // Pull-to-refresh
+  const [pullY, setPullY]         = useState(0)
+  const [pulling, setPulling]     = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const touchStartY = useRef(0)
+  const scrollRef   = useRef(null)
+  const PULL_THRESHOLD = 64
+
+  function onTouchStart(e) {
+    if (scrollRef.current?.scrollTop > 0) return
+    touchStartY.current = e.touches[0].clientY
+    setPulling(true)
+  }
+  function onTouchMove(e) {
+    if (!pulling) return
+    if (scrollRef.current?.scrollTop > 0) { setPulling(false); setPullY(0); return }
+    const dy = e.touches[0].clientY - touchStartY.current
+    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_THRESHOLD + 16))
+  }
+  async function onTouchEnd() {
+    if (!pulling) return
+    setPulling(false)
+    if (pullY >= PULL_THRESHOLD) {
+      setRefreshing(true)
+      setPullY(0)
+      hapticFeedback('medium')
+      await onReload()
+      setRefreshing(false)
+    } else {
+      setPullY(0)
+    }
+  }
 
   useEffect(() => {
     const id = setTimeout(() => setSkeletonDone(true), 600)
     return () => clearTimeout(id)
   }, [])
 
-  // Сбросить локальный стейт только когда сервер подтвердил наши данные
   useEffect(() => {
     if (!data || !user) return
-    const myId = Number(user.id)
-    // Проверяем что хотя бы одна дата содержит нашего игрока ИЛИ данные свежие
     setLocalSlots(null)
   }, [data])
 
@@ -861,15 +890,17 @@ function AvailView({ data, user, onBack, onReload }) {
     setRecentlyChanged(dateKey)
     setTimeout(() => setRecentlyChanged(null), 700)
 
-    // ── Отправляем на сервер в фоне ──
+    // ── Отправляем на сервер в фоне — с таймаутом 5 сек ──
     try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 5000)
       await apiPost('/api/availability', { slot_date: dateKey, time_text: timeText, status })
+      clearTimeout(timer)
       notificationFeedback('success')
-      // SSE сам подтянет обновление от других — нам не нужен лишний reload
     } catch (err) {
       console.error('handlePick error:', err)
       notificationFeedback('error')
-      setLocalSlots(null)  // откатываем при ошибке
+      setLocalSlots(null)
     }
   }, [openDay, localSlots, data, user])
 
@@ -904,7 +935,39 @@ function AvailView({ data, user, onBack, onReload }) {
         </div>
 
         <div style={{ height: 8, flexShrink: 0 }} />
-        <div style={{ flex: 1, overflow: 'auto', position: 'relative', paddingBottom: 4 }}>
+        <div
+          ref={scrollRef}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{ flex: 1, overflow: 'auto', position: 'relative', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}
+        >
+          {/* Pull-to-refresh индикатор */}
+          <div style={{
+            height: pullY || (refreshing ? 48 : 0),
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+            transition: pulling ? 'none' : 'height 300ms cubic-bezier(0.34,1.56,0.64,1)',
+          }}>
+            {(pullY > 10 || refreshing) && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                fontFamily: '"Nunito",system-ui', fontSize: 11, fontWeight: 800,
+                color: 'rgba(255,255,255,0.6)', letterSpacing: 1.5,
+              }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  borderTopColor: '#ff99cc',
+                  animation: refreshing ? 'spin 0.7s linear infinite' : 'none',
+                  transform: !refreshing ? `rotate(${Math.min(pullY / PULL_THRESHOLD, 1) * 360}deg)` : undefined,
+                  transition: pulling ? 'none' : 'transform 200ms',
+                }}/>
+                {refreshing ? 'ОБНОВЛЯЕМ...' : pullY >= PULL_THRESHOLD ? 'ОТПУСТИ' : 'ПОТЯНИ ЕЩЁ'}
+              </div>
+            )}
+          </div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
           {!skeletonDone ? (
             <div style={{ padding: '6px 16px' }}>
               <SkeletonHeader />
