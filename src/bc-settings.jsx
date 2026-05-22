@@ -203,187 +203,70 @@ export function AnimeEyesHero({ ready }) {
   const isHype = ready >= 3
   return (
     <div style={{
-      position:'relative', height:210,
-      borderRadius:16, overflow:'hidden',
-      background:'linear-gradient(180deg, #000000 0%, #0a000f 40%, #12001a 100%)',
-      border:'2px solid #000',
-      boxShadow:'4px 4px 0 #ff99cc',
-      marginBottom:16,
+      position: 'relative',
+      height: 160,
+      borderRadius: 16,
+      overflow: 'hidden',
+      background: '#000',
+      border: '2px solid #000',
+      boxShadow: '4px 4px 0 #ff99cc',
+      marginBottom: 16,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     }}>
-      {/* Туман / глубина */}
-      <div style={{ position:'absolute',inset:0,background:'radial-gradient(ellipse 80% 60% at 50% 60%, rgba(80,0,100,0.25) 0%, transparent 70%)',pointerEvents:'none' }}/>
-
-      {/* Аниме глаза — Solo Leveling узкие */}
-      <div style={{ position:'absolute',top:38,left:0,right:0,display:'flex',justifyContent:'center',gap:48,alignItems:'center' }}>
-        <SLEye color={isHype ? '#ff1111' : '#9966ff'} glow={isHype ? '#ff0000' : '#6600ff'} flipped={false}/>
-        <SLEye color={isHype ? '#ff1111' : '#9966ff'} glow={isHype ? '#ff0000' : '#6600ff'} flipped={true}/>
-      </div>
-
-      {/* Мистический свет между глазами */}
+      {/* Тёмный фон с мягким свечением */}
       <div style={{
-        position:'absolute', top:48, left:'50%', transform:'translateX(-50%)',
-        width:60, height:40,
-        background:`radial-gradient(ellipse, ${isHype ? 'rgba(255,0,0,0.15)' : 'rgba(120,0,255,0.12)'} 0%, transparent 70%)`,
-        transition:'background 1s',
-        pointerEvents:'none',
+        position: 'absolute', inset: 0,
+        background: isHype
+          ? 'radial-gradient(ellipse 90% 70% at 50% 50%, rgba(120,0,0,0.6) 0%, #000 70%)'
+          : 'radial-gradient(ellipse 90% 70% at 50% 50%, rgba(40,0,80,0.7) 0%, #000 70%)',
+        transition: 'background 1s',
+      }}/>
+      {/* Тонкая сетка */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.07,
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
       }}/>
 
-      {/* Надпись */}
-      <div style={{ position:'absolute',bottom:54,left:0,right:0,textAlign:'center' }}>
-        {isHype
-          ? <BloodText text="ГАЗ ЕБАШИТЬСЯ"/>
-          : <ReadyText/>
-        }
+      {/* Текст */}
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        {isHype ? (
+          <>
+            <div style={{
+              fontFamily: '"Permanent Marker", system-ui',
+              fontSize: 36, letterSpacing: 4, color: '#ff2222',
+              textShadow: '0 0 20px rgba(255,0,0,0.8), 0 0 40px rgba(255,0,0,0.4)',
+              animation: 'heroHype 1s ease-in-out infinite',
+            }}>ПОГНАЛИ</div>
+            <div style={{
+              fontFamily: '"Nunito", system-ui', fontWeight: 900,
+              fontSize: 12, letterSpacing: 3, color: 'rgba(255,80,80,0.7)',
+              marginTop: 8, textTransform: 'uppercase',
+            }}>ГАЗ · ЕБАШИТЬСЯ · {ready}/5 ГОТОВЫ</div>
+          </>
+        ) : (
+          <>
+            <div style={{
+              fontFamily: '"Permanent Marker", system-ui',
+              fontSize: 32, letterSpacing: 4, color: '#fff',
+              textShadow: '0 0 16px rgba(153,102,255,0.7), 0 0 32px rgba(153,102,255,0.3)',
+              animation: 'heroFloat 2.8s ease-in-out infinite',
+            }}>ВЫ ГОТОВЫ?</div>
+            <div style={{
+              fontFamily: '"Nunito", system-ui', fontWeight: 900,
+              fontSize: 11, letterSpacing: 3, color: 'rgba(180,150,255,0.6)',
+              marginTop: 8,
+            }}>EGOIST · CS2 · SQUAD</div>
+          </>
+        )}
       </div>
-
-      {/* Котик */}
-      <JumpingCat/>
 
       <style>{`
-        @keyframes slEyeGlow { 0%,100%{opacity:0.85} 50%{opacity:1} }
-        @keyframes slBlink { 0%,94%,100%{transform:scaleY(1)} 96%,98%{transform:scaleY(0.05)} }
-        @keyframes heroPulse { 0%,100%{opacity:0.9;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
-        @keyframes bloodFlow {
-          0%   { height:4px;  opacity:0.7 }
-          40%  { height:16px; opacity:1   }
-          70%  { height:12px; opacity:0.9 }
-          100% { height:4px;  opacity:0.7 }
-        }
-        @keyframes letterDrip0 { 0%,100%{height:5px} 50%{height:18px} }
-        @keyframes letterDrip1 { 0%,100%{height:3px} 50%{height:14px} }
-        @keyframes letterDrip2 { 0%,100%{height:4px} 50%{height:16px} }
-        @keyframes catJump {
-          0%   { transform:translateX(4px)  translateY(0px) }
-          20%  { transform:translateX(24px) translateY(-28px) scaleX(0.9) scaleY(1.1) }
-          40%  { transform:translateX(48px) translateY(0px) scaleX(1.1) scaleY(0.9) }
-          60%  { transform:translateX(28px) translateY(-20px) }
-          80%  { transform:translateX(8px)  translateY(0px) }
-          100% { transform:translateX(4px)  translateY(0px) }
-        }
-        @keyframes catTail { 0%,100%{transform:rotate(-10deg)} 50%{transform:rotate(20deg)} }
-        @keyframes readyFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+        @keyframes heroHype  { 0%,100%{transform:scale(1)}   50%{transform:scale(1.05)} }
+        @keyframes heroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
       `}</style>
-    </div>
-  )
-}
-
-function SLEye({ color, glow, flipped }) {
-  return (
-    <div style={{
-      transform: flipped ? 'scaleX(-1)' : 'none',
-      filter: `drop-shadow(0 0 8px ${glow}) drop-shadow(0 0 20px ${glow}80)`,
-      animation: 'slEyeGlow 2.5s ease-in-out infinite',
-      width:75, height:55,
-    }}>
-      <svg viewBox="0 0 75 55" width="75" height="55">
-        <defs>
-          <radialGradient id={`iris_${flipped?1:0}`} cx="38%" cy="35%" r="55%">
-            <stop offset="0%" stopColor="#fff" stopOpacity="0.95"/>
-            <stop offset="30%" stopColor={color} stopOpacity="1"/>
-            <stop offset="100%" stopColor={glow} stopOpacity="0.9"/>
-          </radialGradient>
-        </defs>
-        {/* Нижнее веко */}
-        <path d="M 4 32 Q 37 50 71 32" stroke={color} strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.4"/>
-        {/* Верхнее веко — характерная для SL форма: плоское сверху, резкий изгиб */}
-        <path d="M 3 30 Q 8 18 20 14 Q 37 8 54 14 Q 66 18 72 30"
-          stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        {/* Длинные ресницы сверху */}
-        <line x1="6"  y1="26" x2="2"  y2="17" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="14" y1="19" x2="11" y2="8"  stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="24" y1="14" x2="23" y2="3"  stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="37" y1="11" x2="37" y2="0"  stroke="#fff" strokeWidth="2"   strokeLinecap="round"/>
-        <line x1="50" y1="14" x2="51" y2="3"  stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="60" y1="19" x2="63" y2="8"  stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="69" y1="26" x2="73" y2="17" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-        {/* Глаз — форма SL-стиль: узкий, острый к углам */}
-        <g style={{ animation:'slBlink 5s ease-in-out infinite', transformOrigin:'37px 28px' }}>
-          <path d="M 4 28 Q 20 14 37 14 Q 54 14 71 28 Q 54 42 37 42 Q 20 42 4 28 Z"
-            fill={`url(#iris_${flipped?1:0})`} opacity="0.92"/>
-          {/* Зрачок — вертикальный как у кошки/SL */}
-          <ellipse cx="37" cy="28" rx="5" ry="11" fill="#000" opacity="0.95"/>
-          {/* Свет */}
-          <ellipse cx="33" cy="22" rx="3.5" ry="5" fill="#fff" opacity="0.9"/>
-          <circle cx="41" cy="32" r="1.5" fill="#fff" opacity="0.5"/>
-        </g>
-      </svg>
-    </div>
-  )
-}
-
-function ReadyText() {
-  return (
-    <div style={{
-      fontFamily:'"Permanent Marker",system-ui',
-      fontSize:22, letterSpacing:4, color:'#fff',
-      textShadow:'0 0 10px rgba(153,102,255,0.7), 0 0 30px rgba(153,102,255,0.4)',
-      animation:'readyFloat 2.8s ease-in-out infinite',
-    }}>
-      ВЫ ГОТОВЫ?
-    </div>
-  )
-}
-
-function BloodText({ text }) {
-  return (
-    <div style={{ position:'relative', display:'inline-block' }}>
-      <div style={{
-        fontFamily:'"Permanent Marker",system-ui',
-        fontSize:24, letterSpacing:3,
-        color:'#ff2222',
-        textShadow:'0 0 10px rgba(255,0,0,0.7), 0 0 25px rgba(255,0,0,0.4), 0 2px 0 #600',
-        animation:'heroPulse 1.1s ease-in-out infinite',
-      }}>{text}</div>
-      <div style={{ position:'absolute',left:'5%',right:'5%',top:'90%',display:'flex',justifyContent:'space-around',height:0 }}>
-        {[0,1,2,3,4,5,6].map(i => (
-          <div key={i} style={{
-            width:2.5, borderRadius:'0 0 50% 50%',
-            background:'linear-gradient(180deg,#ff0000 0%,#7a0000 100%)',
-            boxShadow:'0 0 4px rgba(255,0,0,0.8)',
-            animation:`letterDrip${i%3} ${1.3+i*0.15}s ease-in-out ${i*0.12}s infinite`,
-          }}/>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function JumpingCat() {
-  return (
-    <div style={{ position:'absolute',bottom:6,left:6,animation:'catJump 4s cubic-bezier(0.4,0,0.6,1) infinite' }}>
-      <svg viewBox="0 0 46 46" width="40" height="40">
-        {/* Тело */}
-        <ellipse cx="23" cy="31" rx="13" ry="9" fill="#fff" stroke="#000" strokeWidth="1.5"/>
-        {/* Голова */}
-        <circle cx="23" cy="20" r="9.5" fill="#fff" stroke="#000" strokeWidth="1.5"/>
-        {/* Уши */}
-        <path d="M 15 15 L 12 7 L 19 13 Z" fill="#fff" stroke="#000" strokeWidth="1.3"/>
-        <path d="M 31 15 L 34 7 L 27 13 Z" fill="#fff" stroke="#000" strokeWidth="1.3"/>
-        <path d="M 15.5 13 L 16.5 9 L 18 13 Z" fill="#ff99cc"/>
-        <path d="M 30.5 13 L 29.5 9 L 28 13 Z" fill="#ff99cc"/>
-        {/* Глаза — закрытые дуги */}
-        <path d="M 18 20 Q 20.5 17.5 23 20" stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-        <path d="M 23 20 Q 25.5 17.5 28 20" stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-        {/* Нос + рот */}
-        <path d="M 22 23 L 24 23 L 23 25 Z" fill="#ff99cc"/>
-        <path d="M 23 25 Q 21 27 20 26" stroke="#000" strokeWidth="1" fill="none" strokeLinecap="round"/>
-        <path d="M 23 25 Q 25 27 26 26" stroke="#000" strokeWidth="1" fill="none" strokeLinecap="round"/>
-        {/* Усы */}
-        <line x1="10" y1="22" x2="17" y2="23" stroke="#000" strokeWidth="0.7"/>
-        <line x1="10" y1="24" x2="17" y2="24" stroke="#000" strokeWidth="0.7"/>
-        <line x1="36" y1="22" x2="29" y2="23" stroke="#000" strokeWidth="0.7"/>
-        <line x1="36" y1="24" x2="29" y2="24" stroke="#000" strokeWidth="0.7"/>
-        {/* Лапки */}
-        <ellipse cx="16" cy="38" rx="3" ry="2" fill="#fff" stroke="#000" strokeWidth="1.2"/>
-        <ellipse cx="30" cy="38" rx="3" ry="2" fill="#fff" stroke="#000" strokeWidth="1.2"/>
-        {/* Хвост с анимацией */}
-        <path d="M 35 30 Q 43 25 41 17"
-          stroke="#fff" strokeWidth="4" fill="none" strokeLinecap="round"
-          style={{ transformOrigin:'35px 30px', animation:'catTail 0.8s ease-in-out infinite' }}/>
-        <path d="M 35 30 Q 43 25 41 17"
-          stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round"
-          style={{ transformOrigin:'35px 30px', animation:'catTail 0.8s ease-in-out infinite' }}/>
-      </svg>
     </div>
   )
 }
