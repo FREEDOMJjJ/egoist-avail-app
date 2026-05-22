@@ -57,7 +57,7 @@ export function DayCard({ date, dayData, teamSize, onClick, justChanged }) {
               const name       = player?.display_name || player?.username || null
               return (
                 <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
-                  <AnimeAvatar playerIndex={i} status={status} size={32}/>
+                  <AnimeAvatar playerIndex={i} status={status} size={32} name={name || ""}/>
                   <div style={{
                     fontFamily:'"Nunito",system-ui', fontSize:7, fontWeight:900,
                     color: status === 'can' ? '#22c55e' : status === 'cant' ? '#ef4444' : '#9a9a9a',
@@ -156,10 +156,6 @@ export function DayModal({ date, dayData, teamSize, user, onPick, onClose }) {
 
   function onFromChange(v) {
     setTimeFrom(v); setPreset(null)
-    // Автопереход на "до" когда введено полное время HH:MM
-    if (v.length === 5 && v.includes(':') && toRef.current) {
-      setTimeout(() => toRef.current?.focus(), 50)
-    }
   }
 
   async function handleCan() {
@@ -363,7 +359,7 @@ function PlayerRow({ player, isMe, avatarIndex }) {
   const borderColor = status === 'can' ? '#22c55e' : '#ef4444'
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:12, marginBottom:6, background: isMe ? (status === 'can' ? '#f0fdf4' : '#fef2f2') : '#fafafa', border: isMe ? `1.5px solid ${borderColor}` : '1px solid #ebebeb' }}>
-      <AnimeAvatar playerIndex={avatarIndex} status={status} size={36}/>
+      <AnimeAvatar playerIndex={avatarIndex} status={status} size={36} name={player?.display_name || player?.username || ""}/>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontFamily:'"Nunito",system-ui', fontWeight:900, fontSize:14, letterSpacing:0.5, color:'#000' }}>
           {name}
@@ -385,7 +381,7 @@ function PlayerRow({ player, isMe, avatarIndex }) {
 function PendingRow({ avatarIndex }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:12, marginBottom:6, background:'rgba(0,0,0,0.02)', border:'1px dashed rgba(0,0,0,0.15)' }}>
-      <AnimeAvatar playerIndex={avatarIndex} status="pending" size={36}/>
+      <AnimeAvatar playerIndex={avatarIndex} status="pending" size={36} name=""/>
       <div style={{ fontFamily:'"Nunito",system-ui', fontWeight:700, fontSize:13, color:'#9a9a9a' }}>Ожидаем...</div>
       <div style={{ fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:1.8, fontWeight:800, padding:'4px 10px', borderRadius:999, marginLeft:'auto', background:'rgba(107,114,128,0.12)', color:'#6b7280', border:'1px solid rgba(107,114,128,0.25)' }}>ЖДЁМ</div>
     </div>
