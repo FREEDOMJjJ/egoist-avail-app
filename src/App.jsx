@@ -807,30 +807,55 @@ function AvailView({ data, user, onBack, onReload }) {
   const scrollRef   = useRef(null)
   const PULL_THRESHOLD = 64
 
-  function onTouchStart(e) {
-    if (scrollRef.current?.scrollTop > 0) return
-    touchStartY.current = e.touches[0].clientY
-    setPulling(true)
-  }
-  function onTouchMove(e) {
-    if (!pulling) return
-    if (scrollRef.current?.scrollTop > 0) { setPulling(false); setPullY(0); return }
-    const dy = e.touches[0].clientY - touchStartY.current
-    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_THRESHOLD + 16))
-  }
-  async function onTouchEnd() {
-    if (!pulling) return
-    setPulling(false)
-    if (pullY >= PULL_THRESHOLD) {
-      setRefreshing(true)
-      setPullY(0)
-      hapticFeedback('medium')
-      await onReload()
-      setRefreshing(false)
-    } else {
-      setPullY(0)
+  // Pull-to-refresh через useEffect — единственный способ получить passive:false
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    let startY = 0
+    let pulling = false
+
+    function onStart(e) {
+      if (el.scrollTop > 0) return
+      startY = e.touches[0].clientY
+      pulling = false
     }
-  }
+
+    function onMove(e) {
+      if (el.scrollTop > 0) { setPullY(0); return }
+      const dy = e.touches[0].clientY - startY
+      if (dy > 4) {
+        e.preventDefault() // работает только с passive:false
+        pulling = true
+        setPulling(true)
+        setPullY(Math.min(dy * 0.45, PULL_THRESHOLD + 16))
+      }
+    }
+
+    async function onEnd() {
+      if (!pulling) return
+      pulling = false
+      setPulling(false)
+      setPullY(prev => {
+        if (prev >= PULL_THRESHOLD) {
+          setRefreshing(true)
+          hapticFeedback('medium')
+          onReload().finally(() => setRefreshing(false))
+        }
+        return 0
+      })
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove',  onMove,  { passive: false }) // passive:false — ключевое
+    el.addEventListener('touchend',   onEnd,   { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove',  onMove)
+      el.removeEventListener('touchend',   onEnd)
+    }
+  }, [skeletonDone, onReload])
 
   useEffect(() => {
     const id = setTimeout(() => setSkeletonDone(true), 600)
@@ -937,9 +962,6 @@ function AvailView({ data, user, onBack, onReload }) {
         <div style={{ height: 8, flexShrink: 0 }} />
         <div
           ref={scrollRef}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
           style={{ flex: 1, overflow: 'auto', position: 'relative', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}
         >
           {/* Pull-to-refresh индикатор */}
