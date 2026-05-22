@@ -306,14 +306,8 @@ function HomeView({ onOpenAvail, data, user }) {
         {/* Anime Eyes Hero — заменяет маскота */}
         <AnimeEyesHero ready={todayBest}/>
 
-        {/* Stats row */}
-        <div style={{
-          display: 'flex', gap: 10, marginTop: 12, marginBottom: 12,
-        }}>
-          <StatCard emoji="🔥" label="ПОЛНЫХ СЛОТОВ" value={fullHouseCount} accent />
-          <StatCard emoji="👥" label="СЕГОДНЯ" value={`${todayBest}/${teamSize}`} />
-          <StatCard emoji="📅" label="ДНЕЙ ВПЕРЁД" value={14} />
-        </div>
+        {/* Счётчик состава с прогресс-баром */}
+        <SquadCounter today={todayBest} total={teamSize} fullCount={fullHouseCount}/>
 
         {/* Main CTA — manga style */}
         <button
@@ -516,6 +510,102 @@ function StatCard({ emoji, label, value, accent }) {
         fontSize: 8, letterSpacing: 1.5, fontWeight: 800,
         color: 'rgba(255,255,255,0.45)', marginTop: 4,
       }}>{label}</div>
+    </div>
+  )
+}
+
+// ─── Squad Counter — анимированный счётчик с прогресс-баром ──────────────────
+
+function SquadCounter({ today = 0, total = 5, fullCount = 0 }) {
+  const pct     = total > 0 ? (today / total) * 100 : 0
+  const isFull  = today >= total
+  const label   = isFull ? '🔥 СОСТАВ ГОТОВ' : today === 0 ? 'ГДЕ ВСЕ?' : today < total - 1 ? 'СОБИРАЕМСЯ...' : 'ПОЧТИ СОСТАВ'
+  const barColor = isFull ? '#22c55e' : today >= total - 1 ? '#ff99cc' : today > 0 ? '#4cc9f0' : 'rgba(255,255,255,0.2)'
+
+  return (
+    <div style={{
+      marginTop: 12, marginBottom: 12,
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 14, padding: '14px 16px',
+    }}>
+      {/* Top row */}
+      <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom: 10 }}>
+        <div style={{
+          fontFamily:'"Nunito",system-ui', fontSize:10, letterSpacing:2.5,
+          fontWeight:800, color:'rgba(255,255,255,0.4)',
+        }}>СЕГОДНЯ</div>
+        <div style={{
+          fontFamily:'"Permanent Marker",system-ui',
+          fontSize:13, letterSpacing:1.5,
+          color: isFull ? '#22c55e' : 'rgba(255,255,255,0.35)',
+        }}>{label}</div>
+      </div>
+
+      {/* Counter + bar row */}
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        {/* Big number */}
+        <div style={{
+          fontFamily:'"Permanent Marker",system-ui',
+          fontSize:42, lineHeight:1, color:'#fff',
+          letterSpacing:-1, flexShrink:0,
+          textShadow: isFull ? '0 0 20px rgba(34,197,94,0.5)' : 'none',
+          transition:'text-shadow 0.5s',
+        }}>
+          {today}
+          <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', letterSpacing:0 }}>/{total}</span>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ flex:1 }}>
+          {/* Bar track */}
+          <div style={{
+            height: 8, borderRadius: 999,
+            background:'rgba(255,255,255,0.08)',
+            overflow:'hidden', position:'relative',
+          }}>
+            <div style={{
+              position:'absolute', inset:'0 auto 0 0',
+              width:`${pct}%`,
+              background: isFull
+                ? 'linear-gradient(90deg,#22c55e,#86efac)'
+                : `linear-gradient(90deg,${barColor},${barColor}cc)`,
+              borderRadius:999,
+              transition:'width 600ms cubic-bezier(0.34,1.56,0.64,1), background 500ms',
+              boxShadow: isFull ? '0 0 8px rgba(34,197,94,0.6)' : 'none',
+            }}/>
+          </div>
+          {/* Dots per slot */}
+          <div style={{ display:'flex', gap:4, marginTop:7 }}>
+            {Array.from({ length: total }).map((_, i) => (
+              <div key={i} style={{
+                flex:1, height:4, borderRadius:999,
+                background: i < today
+                  ? (isFull ? '#22c55e' : '#ff99cc')
+                  : 'rgba(255,255,255,0.1)',
+                transition:`background ${300 + i*60}ms ease`,
+                boxShadow: i < today && isFull ? '0 0 4px rgba(34,197,94,0.5)' : 'none',
+              }}/>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Full house streak */}
+      {fullCount > 0 && (
+        <div style={{
+          marginTop:10, paddingTop:10,
+          borderTop:'1px solid rgba(255,255,255,0.06)',
+          display:'flex', alignItems:'center', gap:6,
+        }}>
+          <span style={{ fontSize:12 }}>🔥</span>
+          <span style={{
+            fontFamily:'"Nunito",system-ui', fontSize:10,
+            fontWeight:800, letterSpacing:1.5,
+            color:'rgba(255,153,204,0.6)',
+          }}>{fullCount} ПОЛНЫХ ДНЯ НА ГОРИЗОНТЕ</span>
+        </div>
+      )}
     </div>
   )
 }
