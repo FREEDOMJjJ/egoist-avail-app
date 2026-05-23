@@ -872,6 +872,14 @@ const v = Math.min(dy * 0.45, PULL_THRESHOLD + 16)
 
   useEffect(() => {
     if (!data || !user) return
+    const myId = Number(user.id)
+    // Сбрасываем localSlots только если сервер вернул наши данные
+    // (хотя бы в одном слоте есть наш ID)
+    const slots = data?.slots || []
+    const hasOurData = slots.some(s =>
+      [...(s.can||[]), ...(s.cant||[])].some(p => Number(p.user_id) === myId)
+    )
+    // Всегда сбрасываем — SSE гарантирует что данные свежие
     setLocalSlots(null)
   }, [data])
 
@@ -1064,6 +1072,7 @@ const v = Math.min(dy * 0.45, PULL_THRESHOLD + 16)
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 80 }}>
           <HpFooter
             bestCount={todayBest}
+            cantCount={dayDataMap[todayKey]?.cant?.length || 0}
             teamSize={teamSize}
             onMore={() => {
               const todayDate = days.find(d => isToday(d))
