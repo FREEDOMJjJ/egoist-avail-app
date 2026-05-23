@@ -230,14 +230,13 @@ export function AnimeEyesHero({ ready }) {
       marginBottom: 16,
       background: '#fff',
     }}>
-      {/* Гифка / CSS фоллбек */}
+      {/* Гифка */}
       <div style={{
         height: 140,
         position: 'relative',
         overflow: 'hidden',
-        background: 'linear-gradient(135deg, #0a0010 0%, #1a0030 50%, #0a0010 100%)',
+        background: '#000',
       }}>
-        {/* Гифка — показывается когда файл есть в public/ */}
         <img
           src="/giphy.gif"
           alt=""
@@ -252,22 +251,11 @@ export function AnimeEyesHero({ ready }) {
             display: 'block',
           }}
         />
-        {/* CSS фон пока нет гифки */}
+        {/* Градиент снизу — плавный переход в белую панель */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(ellipse 80% 60% at 30% 40%, rgba(100,0,180,0.4) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 70% 60%, rgba(180,0,80,0.3) 0%, transparent 60%)',
-          animation: 'heroBgPulse 4s ease-in-out infinite',
+          background: 'linear-gradient(to bottom, transparent 50%, rgba(255,255,255,0.98) 100%)',
         }}/>
-        {/* Сетка */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.08,
-          backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }}/>
-        {/* Градиент снизу */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'linear-gradient(to bottom, transparent 40%, rgba(255,255,255,0.95) 100%)',
         }}/>
         <style>{`@keyframes heroBgPulse { 0%,100%{opacity:0.7} 50%{opacity:1} }`}</style>
       </div>
