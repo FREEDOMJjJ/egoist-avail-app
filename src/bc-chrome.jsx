@@ -101,9 +101,10 @@ export function Header({ teamSize = 5 }) {
   )
 }
 
-export function HpFooter({ bestCount, teamSize, onMore }) {
-  const pct = teamSize > 0 ? (bestCount / teamSize) * 100 : 0
-  const segW = teamSize > 0 ? 100 / teamSize : 20
+export function HpFooter({ bestCount, cantCount = 0, teamSize, onMore }) {
+  const canPct  = teamSize > 0 ? (bestCount / teamSize) * 100 : 0
+  const cantPct = teamSize > 0 ? (cantCount  / teamSize) * 100 : 0
+  const segW    = teamSize > 0 ? 100 / teamSize : 20
 
   return (
     <div style={{
@@ -129,31 +130,35 @@ export function HpFooter({ bestCount, teamSize, onMore }) {
         }}>{bestCount} / {teamSize}</span>
       </div>
 
-      <div style={{
-        height: 10, borderRadius: 5,
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.16)',
-        overflow: 'hidden', position: 'relative',
-      }}>
-        {/* segment dividers */}
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
-          backgroundImage: `repeating-linear-gradient(90deg, transparent 0 calc(${segW}% - 1px), rgba(255,255,255,0.18) calc(${segW}% - 1px) ${segW}%)`,
-        }} />
-        <div style={{
-          width: `${pct}%`, height: '100%',
-          background: `linear-gradient(90deg, ${BC_COLORS.pink}, #fff)`,
-          boxShadow: `0 0 6px ${BC_COLORS.pink}88`,
-          transition: 'width .6s cubic-bezier(.2,.8,.2,1)',
-          position: 'relative',
-        }}>
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)',
-            backgroundSize: '40% 100%', backgroundRepeat: 'no-repeat',
-            animation: 'bcShimmer 2.4s linear infinite',
-          }} />
-        </div>
+      {/* Сегментированная полоска — каждый слот отдельным цветом */}
+      <div style={{ display: 'flex', gap: 3, height: 10 }}>
+        {Array.from({ length: teamSize }).map((_, i) => {
+          const iscan  = i < bestCount
+          const iscant = !iscan && i < bestCount + cantCount
+          return (
+            <div key={i} style={{
+              flex: 1, borderRadius: 4,
+              background: iscan
+                ? `linear-gradient(90deg, ${BC_COLORS.pink}, #fff8)`
+                : iscant
+                ? '#ef4444'
+                : 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              boxShadow: iscan ? `0 0 6px ${BC_COLORS.pink}88` : iscant ? '0 0 4px rgba(239,68,68,0.5)' : 'none',
+              transition: `background 400ms ease ${i * 60}ms`,
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {iscan && (
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                  backgroundSize: '40% 100%', backgroundRepeat: 'no-repeat',
+                  animation: 'bcShimmer 2.4s linear infinite',
+                }}/>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       <div style={{
@@ -162,7 +167,7 @@ export function HpFooter({ bestCount, teamSize, onMore }) {
         fontSize: 10, letterSpacing: 1.4, fontWeight: 700,
       }}>
         <Legend dotColor={BC_COLORS.pink} label="МОГУ" />
-        <Legend dotColor={BC_COLORS.steel} label="НЕ МОГУ" />
+        <Legend dotColor="#ef4444" label="НЕ МОГУ" />
         <Legend dotColor="rgba(255,255,255,0.2)" label="ЖДЁМ" hollow />
         <button onClick={onMore} style={{
           marginLeft: 'auto', all: 'unset', cursor: 'pointer',
