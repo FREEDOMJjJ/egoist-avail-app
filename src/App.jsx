@@ -65,12 +65,19 @@ import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
 
+// Инициализируем WebApp сразу — до первого запроса
+try {
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready()
+    window.Telegram.WebApp.expand()
+  }
+} catch (_) {}
+
 function getTelegramInitData() {
   return window.Telegram?.WebApp?.initData || ''
 }
 
 function getTelegramUserId() {
-  // Пробуем получить user_id из WebApp
   try {
     const tg = window.Telegram?.WebApp
     if (tg?.initDataUnsafe?.user?.id) return tg.initDataUnsafe.user.id
@@ -171,22 +178,22 @@ function AppInner() {
   }, [loadData])
 
   useEffect(() => {
-    // Показать кэш сразу — без скелетона при повторном открытии
+    // Показать кэш сразу
     try {
       const cached = localStorage.getItem(CACHE_KEY)
       if (cached) {
         const { me, avail, ts } = JSON.parse(cached)
-        // Кэш не старше 10 минут — сразу показываем
         if (Date.now() - ts < 10 * 60 * 1000) {
-          setUser(me)
-          setData(avail)
-          setLoading(false)
+          setUser(me); setData(avail); setLoading(false)
         }
       }
     } catch (_) {}
 
-    // Загружаем свежие данные в фоне
-    loadData()
+    // Небольшая задержка чтобы Telegram WebApp успел инициализировать initData
+    const initDelay = setTimeout(() => {
+      loadData()
+    }, 300)
+
     const loaderTimer = setTimeout(() => setLoaderDone(true), 3800)
 
     // ── SSE — реалтайм обновления ──
@@ -230,6 +237,7 @@ function AppInner() {
 
     return () => {
       alive = false
+      clearTimeout(initDelay)
       clearTimeout(loaderTimer)
       clearTimeout(reloadTimer.current)
       clearTimeout(retryTimer)
