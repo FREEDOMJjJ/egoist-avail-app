@@ -20,6 +20,41 @@ class ErrorBoundary extends Component {
     return this.props.children
   }
 }
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+function useToast() {
+  const [toast, setToast] = useState(null)
+  const timerRef = useRef(null)
+  const showToast = useCallback((msg, type = 'success') => {
+    clearTimeout(timerRef.current)
+    setToast({ msg, type, key: Date.now() })
+    timerRef.current = setTimeout(() => setToast(null), 2500)
+  }, [])
+  return { toast, showToast }
+}
+
+function Toast({ toast }) {
+  if (!toast) return null
+  const ok = toast.type === 'success'
+  return (
+    <div key={toast.key} style={{
+      position:'fixed', bottom:110, left:16, right:16, zIndex:9990,
+      background:'#fff',
+      border:`2px solid ${ok ? '#22c55e' : '#ef4444'}`,
+      borderRadius:14, padding:'12px 16px',
+      boxShadow:`4px 4px 0 ${ok ? '#22c55e' : '#ef4444'}`,
+      display:'flex', alignItems:'center', gap:10,
+      animation:'toastIn 300ms cubic-bezier(0.34,1.56,0.64,1)',
+      fontFamily:'"Nunito",system-ui',
+    }}>
+      <span style={{fontSize:18}}>{ok ? '✅' : '❌'}</span>
+      <span style={{fontWeight:800, fontSize:13, color:'#000', flex:1}}>{toast.msg}</span>
+      <style>{`@keyframes toastIn { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }`}</style>
+    </div>
+  )
+}
+
 import { MangaBg, MinimalLoader, SkeletonCard } from './bc-effects'
 import { Header, HpFooter, SkeletonHeader } from './bc-chrome'
 import { DayCard, WeekHeader, DayModal } from './bc-day'
@@ -278,9 +313,114 @@ function AppInner() {
   )
 }
 
+
+// ─── Streak counter ───────────────────────────────────────────────────────────
+
+function StreakCard({ streak }) {
+  if (!streak) return null
+  const { current = 0, best = 0 } = streak
+  if (current === 0 && best === 0) return null
+  return (
+    <div style={{
+      display:'flex', gap:10, marginBottom:12,
+    }}>
+      {current > 0 && (
+        <div style={{
+          flex:1, background:'rgba(255,255,255,0.04)',
+          border:'1px solid rgba(255,255,255,0.1)',
+          borderRadius:12, padding:'10px 14px',
+          display:'flex', alignItems:'center', gap:10,
+        }}>
+          <span style={{fontSize:22}}>🔥</span>
+          <div>
+            <div style={{fontFamily:'"Permanent Marker",system-ui', fontSize:22, color:'#ff99cc', lineHeight:1}}>{current}</div>
+            <div style={{fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:800, color:'rgba(255,255,255,0.4)', marginTop:3}}>ДНЕЙ ПОДРЯД</div>
+          </div>
+        </div>
+      )}
+      {best > 0 && (
+        <div style={{
+          flex:1, background:'rgba(255,255,255,0.04)',
+          border:'1px solid rgba(255,255,255,0.1)',
+          borderRadius:12, padding:'10px 14px',
+          display:'flex', alignItems:'center', gap:10,
+        }}>
+          <span style={{fontSize:22}}>🏆</span>
+          <div>
+            <div style={{fontFamily:'"Permanent Marker",system-ui', fontSize:22, color:'rgba(255,255,255,0.7)', lineHeight:1}}>{best}</div>
+            <div style={{fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:800, color:'rgba(255,255,255,0.4)', marginTop:3}}>РЕКОРД</div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Random map button ────────────────────────────────────────────────────────
+
+function RandomMapBtn() {
+  const [map, setMap] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  async function roll() {
+    setLoading(true)
+    try {
+      const res = await apiGet('/api/random-map')
+      setMap(res.map)
+    } catch (_) {}
+    setLoading(false)
+  }
+
+  if (!map) {
+    return (
+      <button onClick={roll} disabled={loading} style={{
+        width:'100%', background:'rgba(255,255,255,0.04)',
+        border:'1px solid rgba(255,255,255,0.1)',
+        borderRadius:12, padding:'12px 16px',
+        display:'flex', alignItems:'center', gap:12,
+        cursor:'pointer', marginBottom:12,
+        transition:'transform 150ms',
+      }}>
+        <span style={{fontSize:20}}>🎲</span>
+        <span style={{fontFamily:'"Permanent Marker",system-ui', fontSize:14, color:'rgba(255,255,255,0.6)', letterSpacing:1}}>
+          {loading ? 'ВЫБИРАЕМ...' : 'РАНДОМ КАРТА'}
+        </span>
+      </button>
+    )
+  }
+
+  return (
+    <div style={{
+      marginBottom:12,
+      background:'rgba(255,255,255,0.95)',
+      border:'2px solid #000', borderRadius:12,
+      padding:'12px 16px',
+      boxShadow:'3px 3px 0 #000',
+      display:'flex', alignItems:'center', gap:12,
+      position:'relative', overflow:'hidden',
+    }}>
+      <div style={{position:'absolute',top:0,right:0,width:60,height:60,pointerEvents:'none',backgroundImage:'radial-gradient(rgba(255,153,204,0.4) 0.7px,transparent 1px)',backgroundSize:'5px 5px',maskImage:'radial-gradient(60% 60% at 100% 0%,#000,transparent)',WebkitMaskImage:'radial-gradient(60% 60% at 100% 0%,#000,transparent)'}}/>
+      <span style={{fontSize:28}}>{map.emoji}</span>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:'"Permanent Marker",system-ui', fontSize:18, color:'#000', letterSpacing:1}}>{map.name}</div>
+        <div style={{fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:800, color:'#6a6a6a', marginTop:2}}>КАРТА НА ПРАК</div>
+      </div>
+      <button onClick={roll} style={{
+        all:'unset', cursor:'pointer', fontSize:20,
+        padding:'4px 8px', borderRadius:8,
+        background:'rgba(0,0,0,0.06)',
+      }}>🔄</button>
+    </div>
+  )
+}
+
 // ─── Home view — manga style ──────────────────────────────────────────────────
 
 function HomeView({ onOpenAvail, data, user }) {
+  const [streak, setStreak] = useState(null)
+  useEffect(() => {
+    apiGet('/api/streak').then(setStreak).catch(() => {})
+  }, [])
   const fullHouseCount = data?.slots?.filter(s => s.can?.length >= (data.team_size || 5)).length || 0
   const todaySlots = data?.slots?.filter(s => s.slot_date === formatDateKey(new Date())) || []
   const todayBest = Math.max(0, ...todaySlots.map(s => s.can?.length || 0))
@@ -326,9 +466,11 @@ function HomeView({ onOpenAvail, data, user }) {
         {/* Anime Eyes Hero — заменяет маскота */}
         <AnimeEyesHero ready={todayBest}/>
 
+        <StreakCard streak={streak}/>
         {/* Счётчик состава с прогресс-баром */}
         <SquadCounter today={todayBest} total={teamSize} fullCount={fullHouseCount}/>
 
+        <RandomMapBtn/>
         {/* Main CTA — manga style */}
         <button
           onClick={() => { hapticFeedback('medium'); onOpenAvail() }}
@@ -814,6 +956,7 @@ function GojoMascotSVG({ mode }) {
 // ─── Avail view ───────────────────────────────────────────────────────────────
 
 function AvailView({ data, user, onBack, onReload }) {
+  const { toast, showToast } = useToast()
   const [openDay, setOpenDay]           = useState(null)
   const [recentlyChanged, setRecentlyChanged] = useState(null)
   const [skeletonDone, setSkeletonDone] = useState(false)
@@ -958,9 +1101,16 @@ const v = Math.min(dy * 0.45, PULL_THRESHOLD + 16)
       await apiPost('/api/availability', { slot_date: dateKey, time_text: timeText, status })
       clearTimeout(timer)
       notificationFeedback('success')
+      // Показываем toast с подтверждением
+      const statusLabel = status === 'can' ? 'Отмечено ✓' : status === 'cant' ? 'Пас отмечен' : 'Отметка снята'
+      const timeLabel = timeText && timeText !== 'ALL DAY' && timeText !== 'anytime'
+        ? ` · ${timeText === 'MORNING' ? 'Утро' : timeText === 'DAY' ? 'День' : timeText === 'NIGHT' ? 'Ночь' : timeText}`
+        : ''
+      showToast(`${statusLabel}${timeLabel}`)
     } catch (err) {
       console.error('handlePick error:', err)
       notificationFeedback('error')
+      showToast('Ошибка сохранения', 'error')
       setLocalSlots(null)
     }
   }, [openDay, localSlots, data, user])
@@ -1101,6 +1251,8 @@ const v = Math.min(dy * 0.45, PULL_THRESHOLD + 16)
           />
         </div>
       )}
+
+      <Toast toast={toast}/>
 
       {openDay && (
         <DayModal
