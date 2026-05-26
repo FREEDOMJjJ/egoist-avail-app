@@ -34,19 +34,26 @@ function getTelegramInitData() {
   return window.Telegram?.WebApp?.initData || ''
 }
 
-function hapticFeedback(type = 'light') {
-  try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type) } catch (e) {}
-}
-
-function notificationFeedback(type = 'success') {
-  try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type) } catch (e) {}
+function getTelegramUserId() {
+  // Пробуем получить user_id из WebApp
+  try {
+    const tg = window.Telegram?.WebApp
+    if (tg?.initDataUnsafe?.user?.id) return tg.initDataUnsafe.user.id
+  } catch (_) {}
+  return null
 }
 
 async function apiGet(path) {
   const headers = {}
   const initData = getTelegramInitData()
-  if (initData) headers['X-Telegram-Init-Data'] = initData
-  const res = await fetch(`${API_URL}${path}`, { headers })
+  if (initData) {
+    headers['X-Telegram-Init-Data'] = initData
+  }
+  // Для форков без initData — добавляем uid как fallback
+  const uid = getTelegramUserId()
+  const sep = path.includes('?') ? '&' : '?'
+  const uidParam = (!initData && uid) ? `${sep}uid=${uid}` : ''
+  const res = await fetch(`${API_URL}${path}${uidParam}`, { headers })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -54,8 +61,13 @@ async function apiGet(path) {
 async function apiPost(path, body) {
   const headers = { 'Content-Type': 'application/json' }
   const initData = getTelegramInitData()
-  if (initData) headers['X-Telegram-Init-Data'] = initData
-  const res = await fetch(`${API_URL}${path}`, {
+  if (initData) {
+    headers['X-Telegram-Init-Data'] = initData
+  }
+  const uid = getTelegramUserId()
+  const sep = path.includes('?') ? '&' : '?'
+  const uidParam = (!initData && uid) ? `${sep}uid=${uid}` : ''
+  const res = await fetch(`${API_URL}${path}${uidParam}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -64,7 +76,15 @@ async function apiPost(path, body) {
   return res.json()
 }
 
-// ─── Root ────────────────────────────────────────────────────────────────────
+function hapticFeedback(type = 'light') {
+  try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type) } catch (e) {}
+}
+
+function notificationFeedback(type = 'success') {
+  try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type) } catch (e) {}
+}
+
+
 
 export default function App() {
   return (
