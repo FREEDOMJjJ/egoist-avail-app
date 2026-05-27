@@ -161,7 +161,21 @@ function AppInner() {
       }
     } catch (_) {}
 
-    loadData()
+    // Ждём initData — на Desktop может заполняться с задержкой
+    let initDelay
+    const startTime = Date.now()
+    function waitForInitData() {
+      const initData = window.Telegram?.WebApp?.initData
+      if (initData || Date.now() - startTime > 2000) {
+        // initData появился или таймаут 2 сек — грузим
+        loadData()
+      } else {
+        // Ждём ещё 100мс
+        initDelay = setTimeout(waitForInitData, 100)
+      }
+    }
+    initDelay = setTimeout(waitForInitData, 100)
+
     const loaderTimer = setTimeout(() => setLoaderDone(true), 3800)
 
     // ── SSE — реалтайм обновления ──
@@ -205,6 +219,7 @@ function AppInner() {
 
     return () => {
       alive = false
+      clearTimeout(initDelay)
       clearTimeout(loaderTimer)
       clearTimeout(reloadTimer.current)
       clearTimeout(retryTimer)
