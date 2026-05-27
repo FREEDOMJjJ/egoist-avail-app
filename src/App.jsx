@@ -259,11 +259,12 @@ function AppInner() {
   if (error) {
     const tg = window.Telegram?.WebApp
     const diagInfo = {
+      telegramExists: typeof window.Telegram !== 'undefined' ? '✓' : '❌',
+      webAppExists: typeof window.Telegram?.WebApp !== 'undefined' ? '✓' : '❌',
       initDataLen: tg?.initData?.length || 0,
-      hasUser: !!tg?.initDataUnsafe?.user,
-      userId: tg?.initDataUnsafe?.user?.id || 'нет',
-      version: tg?.version || 'нет',
-      platform: tg?.platform || 'нет',
+      userId: tg?.initDataUnsafe?.user?.id || '❌ нет',
+      platform: tg?.platform || '❌ нет',
+      version: tg?.version || '❌ нет',
     }
     return (
       <div style={{
@@ -271,27 +272,24 @@ function AppInner() {
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
         padding:'32px 24px', fontFamily:'"Nunito",system-ui', color:'#fff',
       }}>
-        <div style={{ fontSize:40, marginBottom:16 }}>⚠️</div>
+        <div style={{ fontSize:40, marginBottom:12 }}>⚠️</div>
         <div style={{
-          fontFamily:'"Permanent Marker",system-ui', fontSize:22,
-          color:'#ff99cc', marginBottom:16, letterSpacing:1,
+          fontFamily:'"Permanent Marker",system-ui', fontSize:20,
+          color:'#ff99cc', marginBottom:12,
         }}>ОШИБКА ЗАГРУЗКИ</div>
-        <div style={{
-          fontSize:12, color:'rgba(255,255,255,0.5)', textAlign:'center',
-          marginBottom:24, lineHeight:1.6,
-        }}>{error}</div>
 
-        {/* Диагностика */}
         <div style={{
           width:'100%', background:'rgba(255,255,255,0.05)',
           border:'1px solid rgba(255,255,255,0.1)',
-          borderRadius:12, padding:'12px 16px', marginBottom:20,
-          fontSize:11, fontFamily:'monospace', color:'rgba(255,255,255,0.6)',
-          textAlign:'left', lineHeight:1.8,
+          borderRadius:12, padding:'12px 16px', marginBottom:16,
+          fontSize:11, fontFamily:'monospace', color:'rgba(255,255,255,0.7)',
+          textAlign:'left', lineHeight:2,
         }}>
-          <div style={{color:'#ff99cc', marginBottom:6, fontWeight:700}}>ДИАГНОСТИКА:</div>
-          <div>initData: {diagInfo.initDataLen > 0 ? `${diagInfo.initDataLen} символов ✓` : '❌ пустой'}</div>
-          <div>userId: {diagInfo.userId !== 'нет' ? `${diagInfo.userId} ✓` : '❌ нет'}</div>
+          <div style={{color:'#ff99cc', marginBottom:4, fontSize:12}}>ДИАГНОСТИКА:</div>
+          <div>window.Telegram: {diagInfo.telegramExists}</div>
+          <div>WebApp объект: {diagInfo.webAppExists}</div>
+          <div>initData длина: {diagInfo.initDataLen}</div>
+          <div>userId: {diagInfo.userId}</div>
           <div>platform: {diagInfo.platform}</div>
           <div>version: {diagInfo.version}</div>
         </div>
@@ -300,7 +298,7 @@ function AppInner() {
           padding:'12px 28px', background:'#ff99cc', color:'#000',
           border:'2px solid #000', borderRadius:12,
           fontWeight:900, fontSize:14, cursor:'pointer',
-          boxShadow:'3px 3px 0 #000',
+          boxShadow:'3px 3px 0 #000', marginBottom:12,
         }}>
           ПОПРОБОВАТЬ СНОВА
         </button>
