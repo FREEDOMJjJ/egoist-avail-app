@@ -257,63 +257,53 @@ function AppInner() {
   }
 
   if (error) {
-    // Проверяем — открыто ли в Telegram?
-    const hasTG = !!(window.Telegram?.WebApp?.initData || window.Telegram?.WebApp?.initDataUnsafe?.user?.id)
+    const tg = window.Telegram?.WebApp
+    const diagInfo = {
+      initDataLen: tg?.initData?.length || 0,
+      hasUser: !!tg?.initDataUnsafe?.user,
+      userId: tg?.initDataUnsafe?.user?.id || 'нет',
+      version: tg?.version || 'нет',
+      platform: tg?.platform || 'нет',
+    }
     return (
       <div style={{
-        position: 'relative', height: '100vh', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '40px 24px', textAlign: 'center',
-        fontFamily: '"Nunito", system-ui',
+        position:'fixed', inset:0, background:'#000',
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        padding:'32px 24px', fontFamily:'"Nunito",system-ui', color:'#fff',
       }}>
-        <MangaBg petals={false} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 320 }}>
-          <div style={{ fontSize: 48, color: '#ff99cc', marginBottom: 16 }}>
-            {!hasTG ? '🤖' : '!'}
-          </div>
-          {!hasTG ? (
-            <>
-              <div style={{
-                fontFamily: '"Permanent Marker", system-ui',
-                fontSize: 24, color: '#fff', letterSpacing: 1, marginBottom: 16,
-              }}>ОТКРОЙ ЧЕРЕЗ БОТА</div>
-              <div style={{
-                fontSize: 13, fontWeight: 700, lineHeight: 1.6,
-                color: 'rgba(255,255,255,0.65)', marginBottom: 24,
-              }}>
-                Приложение работает только<br/>через Telegram-бота.<br/><br/>
-                Открой <b style={{ color: '#ff99cc' }}>@stratbook_bot</b><br/>
-                и нажми кнопку "Календарь"
-              </div>
-              <a href="https://t.me/stratbook_bot?start=calendar" style={{
-                display: 'inline-block', padding: '14px 28px',
-                background: '#ff99cc', color: '#000',
-                border: '2px solid #000', borderRadius: 12,
-                fontWeight: 900, fontSize: 14, letterSpacing: 1,
-                textDecoration: 'none', boxShadow: '3px 3px 0 #000',
-              }}>
-                ОТКРЫТЬ БОТА
-              </a>
-            </>
-          ) : (
-            <>
-              <div style={{
-                fontSize: 13, letterSpacing: 1.5, fontWeight: 700,
-                color: 'rgba(255,255,255,0.6)',
-                whiteSpace: 'pre-line', marginBottom: 24,
-              }}>{error}</div>
-              <button onClick={() => { setError(null); setLoading(true); loadData() }} style={{
-                padding: '12px 24px',
-                background: '#ff99cc', color: '#000',
-                border: '2px solid #000', borderRadius: 12,
-                fontWeight: 900, fontSize: 14, cursor: 'pointer',
-                boxShadow: '3px 3px 0 #000',
-              }}>
-                ПОПРОБОВАТЬ СНОВА
-              </button>
-            </>
-          )}
+        <div style={{ fontSize:40, marginBottom:16 }}>⚠️</div>
+        <div style={{
+          fontFamily:'"Permanent Marker",system-ui', fontSize:22,
+          color:'#ff99cc', marginBottom:16, letterSpacing:1,
+        }}>ОШИБКА ЗАГРУЗКИ</div>
+        <div style={{
+          fontSize:12, color:'rgba(255,255,255,0.5)', textAlign:'center',
+          marginBottom:24, lineHeight:1.6,
+        }}>{error}</div>
+
+        {/* Диагностика */}
+        <div style={{
+          width:'100%', background:'rgba(255,255,255,0.05)',
+          border:'1px solid rgba(255,255,255,0.1)',
+          borderRadius:12, padding:'12px 16px', marginBottom:20,
+          fontSize:11, fontFamily:'monospace', color:'rgba(255,255,255,0.6)',
+          textAlign:'left', lineHeight:1.8,
+        }}>
+          <div style={{color:'#ff99cc', marginBottom:6, fontWeight:700}}>ДИАГНОСТИКА:</div>
+          <div>initData: {diagInfo.initDataLen > 0 ? `${diagInfo.initDataLen} символов ✓` : '❌ пустой'}</div>
+          <div>userId: {diagInfo.userId !== 'нет' ? `${diagInfo.userId} ✓` : '❌ нет'}</div>
+          <div>platform: {diagInfo.platform}</div>
+          <div>version: {diagInfo.version}</div>
         </div>
+
+        <button onClick={() => { setError(null); setLoading(true); loadData() }} style={{
+          padding:'12px 28px', background:'#ff99cc', color:'#000',
+          border:'2px solid #000', borderRadius:12,
+          fontWeight:900, fontSize:14, cursor:'pointer',
+          boxShadow:'3px 3px 0 #000',
+        }}>
+          ПОПРОБОВАТЬ СНОВА
+        </button>
       </div>
     )
   }
