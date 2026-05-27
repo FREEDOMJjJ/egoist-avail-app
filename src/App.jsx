@@ -65,17 +65,29 @@ import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
 
-// WebApp уже инициализирован в main.jsx — здесь не дублируем
+// WebApp уже инициализирован в main.jsx
 
 function getTelegramInitData() {
   return window.Telegram?.WebApp?.initData || ''
+}
+
+function getTelegramUserId() {
+  try {
+    const tg = window.Telegram?.WebApp
+    if (tg?.initDataUnsafe?.user?.id) return String(tg.initDataUnsafe.user.id)
+  } catch (_) {}
+  return null
 }
 
 async function apiGet(path) {
   const headers = {}
   const initData = getTelegramInitData()
   if (initData) headers['X-Telegram-Init-Data'] = initData
-  const res = await fetch(`${API_URL}${path}`, { headers })
+  // uid fallback для форков где initData пустой
+  const uid = getTelegramUserId()
+  const sep = path.includes('?') ? '&' : '?'
+  const extra = (!initData && uid) ? `${sep}uid=${uid}` : ''
+  const res = await fetch(`${API_URL}${path}${extra}`, { headers })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -84,7 +96,10 @@ async function apiPost(path, body) {
   const headers = { 'Content-Type': 'application/json' }
   const initData = getTelegramInitData()
   if (initData) headers['X-Telegram-Init-Data'] = initData
-  const res = await fetch(`${API_URL}${path}`, {
+  const uid = getTelegramUserId()
+  const sep = path.includes('?') ? '&' : '?'
+  const extra = (!initData && uid) ? `${sep}uid=${uid}` : ''
+  const res = await fetch(`${API_URL}${path}${extra}`, {
     method: 'POST', headers, body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
