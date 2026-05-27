@@ -80,7 +80,17 @@ function getTelegramInitData() {
 function getTelegramUserId() {
   try {
     const tg = window.Telegram?.WebApp
-    if (tg?.initDataUnsafe?.user?.id) return tg.initDataUnsafe.user.id
+    // Пробуем все возможные пути получить user_id
+    if (tg?.initDataUnsafe?.user?.id) return String(tg.initDataUnsafe.user.id)
+    // Парсим initData вручную если initDataUnsafe пустой
+    if (tg?.initData) {
+      const params = new URLSearchParams(tg.initData)
+      const user = params.get('user')
+      if (user) {
+        const parsed = JSON.parse(user)
+        if (parsed?.id) return String(parsed.id)
+      }
+    }
   } catch (_) {}
   return null
 }
@@ -88,13 +98,14 @@ function getTelegramUserId() {
 async function apiGet(path) {
   const headers = {}
   const initData = getTelegramInitData()
-  if (initData) {
-    headers['X-Telegram-Init-Data'] = initData
-  }
-  // Для форков без initData — добавляем uid как fallback
   const uid = getTelegramUserId()
+
+  if (initData) headers['X-Telegram-Init-Data'] = initData
+
+  // uid передаём всегда как запасной вариант (Desktop, форки)
   const sep = path.includes('?') ? '&' : '?'
-  const uidParam = (!initData && uid) ? `${sep}uid=${uid}` : ''
+  const uidParam = uid ? `${sep}uid=${uid}` : ''
+
   const res = await fetch(`${API_URL}${path}${uidParam}`, { headers })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -103,16 +114,15 @@ async function apiGet(path) {
 async function apiPost(path, body) {
   const headers = { 'Content-Type': 'application/json' }
   const initData = getTelegramInitData()
-  if (initData) {
-    headers['X-Telegram-Init-Data'] = initData
-  }
   const uid = getTelegramUserId()
+
+  if (initData) headers['X-Telegram-Init-Data'] = initData
+
   const sep = path.includes('?') ? '&' : '?'
-  const uidParam = (!initData && uid) ? `${sep}uid=${uid}` : ''
+  const uidParam = uid ? `${sep}uid=${uid}` : ''
+
   const res = await fetch(`${API_URL}${path}${uidParam}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
+    method: 'POST', headers, body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
