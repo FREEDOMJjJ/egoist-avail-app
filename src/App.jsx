@@ -68,13 +68,40 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-productio
 // WebApp уже инициализирован в main.jsx
 
 function getTelegramInitData() {
-  return window.Telegram?.WebApp?.initData || ''
+  // Обычный способ — через WebApp объект
+  const fromWebApp = window.Telegram?.WebApp?.initData
+  if (fromWebApp) return fromWebApp
+
+  // Fallback: читаем напрямую из URL hash (работает на форках без скрипта)
+  // Telegram передаёт: #tgWebAppData=query_id%3D...%26user%3D...
+  try {
+    const hash = window.location.hash
+    if (hash) {
+      const params = new URLSearchParams(hash.slice(1))
+      const tgData = params.get('tgWebAppData')
+      if (tgData) return decodeURIComponent(tgData)
+    }
+  } catch (_) {}
+
+  return ''
 }
 
 function getTelegramUserId() {
   try {
+    // Из WebApp объекта
     const tg = window.Telegram?.WebApp
     if (tg?.initDataUnsafe?.user?.id) return String(tg.initDataUnsafe.user.id)
+
+    // Из initData напрямую
+    const initData = getTelegramInitData()
+    if (initData) {
+      const params = new URLSearchParams(initData)
+      const user = params.get('user')
+      if (user) {
+        const parsed = JSON.parse(user)
+        if (parsed?.id) return String(parsed.id)
+      }
+    }
   } catch (_) {}
   return null
 }
@@ -258,13 +285,16 @@ function AppInner() {
 
   if (error) {
     const tg = window.Telegram?.WebApp
+    const hashRaw = window.location.hash || ''
+    const hashParams = new URLSearchParams(hashRaw.slice(1))
     const diagInfo = {
       telegramExists: typeof window.Telegram !== 'undefined' ? '✓' : '❌',
       webAppExists: typeof window.Telegram?.WebApp !== 'undefined' ? '✓' : '❌',
-      initDataLen: tg?.initData?.length || 0,
-      userId: tg?.initDataUnsafe?.user?.id || '❌ нет',
+      initDataLen: getTelegramInitData().length,
+      userId: getTelegramUserId() || '❌ нет',
       platform: tg?.platform || '❌ нет',
-      version: tg?.version || '❌ нет',
+      hashLen: hashRaw.length,
+      hasTgData: hashParams.has('tgWebAppData') ? '✓' : '❌',
     }
     return (
       <div style={{
@@ -288,10 +318,11 @@ function AppInner() {
           <div style={{color:'#ff99cc', marginBottom:4, fontSize:12}}>ДИАГНОСТИКА:</div>
           <div>window.Telegram: {diagInfo.telegramExists}</div>
           <div>WebApp объект: {diagInfo.webAppExists}</div>
-          <div>initData длина: {diagInfo.initDataLen}</div>
+          <div>URL hash длина: {diagInfo.hashLen}</div>
+          <div>tgWebAppData в hash: {diagInfo.hasTgData}</div>
+          <div>initData итого: {diagInfo.initDataLen > 0 ? `${diagInfo.initDataLen} символов ✓` : '❌ 0'}</div>
           <div>userId: {diagInfo.userId}</div>
           <div>platform: {diagInfo.platform}</div>
-          <div>version: {diagInfo.version}</div>
         </div>
 
         <button onClick={() => { setError(null); setLoading(true); loadData() }} style={{
