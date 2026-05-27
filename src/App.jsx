@@ -65,48 +65,17 @@ import './styles.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://stratbook-bot-production.up.railway.app'
 
-// Инициализируем WebApp сразу — до первого запроса
-try {
-  if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.ready()
-    window.Telegram.WebApp.expand()
-  }
-} catch (_) {}
+// WebApp уже инициализирован в main.jsx — здесь не дублируем
 
 function getTelegramInitData() {
   return window.Telegram?.WebApp?.initData || ''
 }
 
-function getTelegramUserId() {
-  try {
-    const tg = window.Telegram?.WebApp
-    // Пробуем все возможные пути получить user_id
-    if (tg?.initDataUnsafe?.user?.id) return String(tg.initDataUnsafe.user.id)
-    // Парсим initData вручную если initDataUnsafe пустой
-    if (tg?.initData) {
-      const params = new URLSearchParams(tg.initData)
-      const user = params.get('user')
-      if (user) {
-        const parsed = JSON.parse(user)
-        if (parsed?.id) return String(parsed.id)
-      }
-    }
-  } catch (_) {}
-  return null
-}
-
 async function apiGet(path) {
   const headers = {}
   const initData = getTelegramInitData()
-  const uid = getTelegramUserId()
-
   if (initData) headers['X-Telegram-Init-Data'] = initData
-
-  // uid передаём всегда как запасной вариант (Desktop, форки)
-  const sep = path.includes('?') ? '&' : '?'
-  const uidParam = uid ? `${sep}uid=${uid}` : ''
-
-  const res = await fetch(`${API_URL}${path}${uidParam}`, { headers })
+  const res = await fetch(`${API_URL}${path}`, { headers })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -114,14 +83,8 @@ async function apiGet(path) {
 async function apiPost(path, body) {
   const headers = { 'Content-Type': 'application/json' }
   const initData = getTelegramInitData()
-  const uid = getTelegramUserId()
-
   if (initData) headers['X-Telegram-Init-Data'] = initData
-
-  const sep = path.includes('?') ? '&' : '?'
-  const uidParam = uid ? `${sep}uid=${uid}` : ''
-
-  const res = await fetch(`${API_URL}${path}${uidParam}`, {
+  const res = await fetch(`${API_URL}${path}`, {
     method: 'POST', headers, body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
@@ -150,8 +113,8 @@ function AppInner() {
   // Не блокируем по платформе — сервер сам проверит initData
   // На Desktop Telegram WebApp объект может быть пустым но работать
   const [loading, setLoading]       = useState(true)
-  const [loaderDone, setLoaderDone] = useState(false)  // анимация завершена
-  const [tapped, setTapped]         = useState(false)  // тапнули для пропуска
+  const [loaderDone, setLoaderDone] = useState(false)
+  const [tapped, setTapped]         = useState(false)
   const [error, setError]           = useState(null)
   const [user, setUser]             = useState(null)
   const [data, setData]             = useState(null)
@@ -168,7 +131,6 @@ function AppInner() {
       setUser(meRes)
       setData(availRes)
       setError(null)
-      // Сохраняем в localStorage для следующего открытия
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify({ me: meRes, avail: availRes, ts: Date.now() }))
       } catch (_) {}
@@ -199,11 +161,7 @@ function AppInner() {
       }
     } catch (_) {}
 
-    // Небольшая задержка чтобы Telegram WebApp успел инициализировать initData
-    const initDelay = setTimeout(() => {
-      loadData()
-    }, 300)
-
+    loadData()
     const loaderTimer = setTimeout(() => setLoaderDone(true), 3800)
 
     // ── SSE — реалтайм обновления ──
@@ -247,7 +205,6 @@ function AppInner() {
 
     return () => {
       alive = false
-      clearTimeout(initDelay)
       clearTimeout(loaderTimer)
       clearTimeout(reloadTimer.current)
       clearTimeout(retryTimer)
