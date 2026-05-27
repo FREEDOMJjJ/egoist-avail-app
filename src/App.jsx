@@ -260,6 +260,8 @@ function AppInner() {
   }
 
   if (error) {
+    // Проверяем — открыто ли в Telegram?
+    const hasTG = !!(window.Telegram?.WebApp?.initData || window.Telegram?.WebApp?.initDataUnsafe?.user?.id)
     return (
       <div style={{
         position: 'relative', height: '100vh', overflow: 'hidden',
@@ -268,25 +270,52 @@ function AppInner() {
         fontFamily: '"Nunito", system-ui',
       }}>
         <MangaBg petals={false} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{
-            fontFamily: '"Nunito", system-ui',
-            fontSize: 48, color: '#ff99cc', marginBottom: 16,
-          }}>!</div>
-          <div style={{
-            fontSize: 13, letterSpacing: 1.5, fontWeight: 700,
-            color: 'rgba(255,255,255,0.6)',
-            whiteSpace: 'pre-line',
-          }}>{error}</div>
-          <button onClick={() => { setError(null); setLoading(true); loadData() }} style={{
-            marginTop: 24, padding: '12px 24px',
-            background: '#ff99cc', color: '#000',
-            border: '2px solid #000', borderRadius: 12,
-            fontWeight: 900, fontSize: 14, cursor: 'pointer',
-            boxShadow: '3px 3px 0 #000',
-          }}>
-            ПОПРОБОВАТЬ СНОВА
-          </button>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 320 }}>
+          <div style={{ fontSize: 48, color: '#ff99cc', marginBottom: 16 }}>
+            {!hasTG ? '🤖' : '!'}
+          </div>
+          {!hasTG ? (
+            <>
+              <div style={{
+                fontFamily: '"Permanent Marker", system-ui',
+                fontSize: 24, color: '#fff', letterSpacing: 1, marginBottom: 16,
+              }}>ОТКРОЙ ЧЕРЕЗ БОТА</div>
+              <div style={{
+                fontSize: 13, fontWeight: 700, lineHeight: 1.6,
+                color: 'rgba(255,255,255,0.65)', marginBottom: 24,
+              }}>
+                Приложение работает только<br/>через Telegram-бота.<br/><br/>
+                Открой <b style={{ color: '#ff99cc' }}>@stratbook_bot</b><br/>
+                и нажми кнопку "Календарь"
+              </div>
+              <a href="https://t.me/stratbook_bot?start=calendar" style={{
+                display: 'inline-block', padding: '14px 28px',
+                background: '#ff99cc', color: '#000',
+                border: '2px solid #000', borderRadius: 12,
+                fontWeight: 900, fontSize: 14, letterSpacing: 1,
+                textDecoration: 'none', boxShadow: '3px 3px 0 #000',
+              }}>
+                ОТКРЫТЬ БОТА
+              </a>
+            </>
+          ) : (
+            <>
+              <div style={{
+                fontSize: 13, letterSpacing: 1.5, fontWeight: 700,
+                color: 'rgba(255,255,255,0.6)',
+                whiteSpace: 'pre-line', marginBottom: 24,
+              }}>{error}</div>
+              <button onClick={() => { setError(null); setLoading(true); loadData() }} style={{
+                padding: '12px 24px',
+                background: '#ff99cc', color: '#000',
+                border: '2px solid #000', borderRadius: 12,
+                fontWeight: 900, fontSize: 14, cursor: 'pointer',
+                boxShadow: '3px 3px 0 #000',
+              }}>
+                ПОПРОБОВАТЬ СНОВА
+              </button>
+            </>
+          )}
         </div>
       </div>
     )
