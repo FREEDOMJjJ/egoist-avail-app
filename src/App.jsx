@@ -467,6 +467,53 @@ function RandomMapBtn() {
   )
 }
 
+// ─── Call All button ──────────────────────────────────────────────────────────
+
+function CallAllBtn() {
+  const [state, setState] = useState('idle')
+
+  async function callAll() {
+    if (state !== 'idle') return
+    setState('sending')
+    hapticFeedback('medium')
+    try {
+      const today = formatDateKey(new Date())
+      await apiPost('/api/call-all', { slot_date: today })
+      setState('sent')
+      setTimeout(() => setState('idle'), 8000)
+    } catch (err) {
+      if (err.message?.includes('429')) {
+        setState('cooldown')
+        setTimeout(() => setState('idle'), 5000)
+      } else {
+        setState('idle')
+      }
+    }
+  }
+
+  const label = state === 'sending' ? 'ЗОВЁМ...'
+              : state === 'sent'     ? '✓ ПОЗВАЛИ ВСЕХ'
+              : state === 'cooldown' ? 'ПОДОЖДИ НЕМНОГО'
+              : 'ПОЗВАТЬ ВСЕХ'
+
+  return (
+    <button onClick={callAll} disabled={state !== 'idle'} style={{
+      width:'100%', background: state === 'sent' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
+      border:`1px solid ${state === 'sent' ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`,
+      borderRadius:12, padding:'12px 16px',
+      display:'flex', alignItems:'center', gap:12,
+      cursor: state === 'idle' ? 'pointer' : 'default', marginBottom:12,
+      transition:'all 200ms',
+    }}>
+      <span style={{fontSize:20}}>📣</span>
+      <span style={{
+        fontFamily:'"Permanent Marker",system-ui', fontSize:14,
+        color: state === 'sent' ? '#22c55e' : 'rgba(255,255,255,0.6)', letterSpacing:1,
+      }}>{label}</span>
+    </button>
+  )
+}
+
 // ─── Home view — manga style ──────────────────────────────────────────────────
 
 function HomeView({ onOpenAvail, data, user }) {
@@ -524,6 +571,7 @@ function HomeView({ onOpenAvail, data, user }) {
         <SquadCounter today={todayBest} total={teamSize} fullCount={fullHouseCount}/>
 
         <RandomMapBtn/>
+        <CallAllBtn/>
         {/* Main CTA — manga style */}
         <button
           onClick={() => { hapticFeedback('medium'); onOpenAvail() }}
