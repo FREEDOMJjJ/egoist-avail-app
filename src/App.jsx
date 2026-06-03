@@ -359,110 +359,243 @@ function AppInner() {
     )
   }
 
+  if (view === 'game') {
+    return (
+      <ErrorBoundary>
+        <ReactionGame onBack={() => setView('home')} />
+      </ErrorBoundary>
+    )
+  }
+
   return (
     <ErrorBoundary>
-      <HomeView onOpenAvail={() => setView('avail')} data={data} user={user} />
+      <HomeView onOpenAvail={() => setView('avail')} onOpenGame={() => setView('game')} data={data} user={user} />
     </ErrorBoundary>
   )
 }
 
 
-// ─── Streak counter ───────────────────────────────────────────────────────────
+// ─── Reaction Game ────────────────────────────────────────────────────────────
 
-function StreakCard({ streak }) {
-  if (!streak) return null
-  const { current = 0, best = 0 } = streak
-  if (current === 0 && best === 0) return null
-  return (
-    <div style={{
-      display:'flex', gap:10, marginBottom:12,
-    }}>
-      {current > 0 && (
-        <div style={{
-          flex:1, background:'rgba(255,255,255,0.04)',
-          border:'1px solid rgba(255,255,255,0.1)',
-          borderRadius:12, padding:'10px 14px',
-          display:'flex', alignItems:'center', gap:10,
-        }}>
-          <span style={{fontSize:22}}>🔥</span>
-          <div>
-            <div style={{fontFamily:'"Permanent Marker",system-ui', fontSize:22, color:'#ff99cc', lineHeight:1}}>{current}</div>
-            <div style={{fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:800, color:'rgba(255,255,255,0.4)', marginTop:3}}>ДНЕЙ ПОДРЯД</div>
-          </div>
-        </div>
-      )}
-      {best > 0 && (
-        <div style={{
-          flex:1, background:'rgba(255,255,255,0.04)',
-          border:'1px solid rgba(255,255,255,0.1)',
-          borderRadius:12, padding:'10px 14px',
-          display:'flex', alignItems:'center', gap:10,
-        }}>
-          <span style={{fontSize:22}}>🏆</span>
-          <div>
-            <div style={{fontFamily:'"Permanent Marker",system-ui', fontSize:22, color:'rgba(255,255,255,0.7)', lineHeight:1}}>{best}</div>
-            <div style={{fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:800, color:'rgba(255,255,255,0.4)', marginTop:3}}>РЕКОРД</div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+const GAME_ROUNDS = 10
+const GAME_BEST_KEY = 'egoist_reaction_best'
 
-// ─── Random map button ────────────────────────────────────────────────────────
+function ReactionGame({ onBack }) {
+  const [phase, setPhase]       = useState('intro')   // intro | playing | done
+  const [round, setRound]       = useState(0)
+  const [target, setTarget]     = useState(null)
+  const [grid, setGrid]         = useState([])
+  const [times, setTimes]       = useState([])
+  const [failed, setFailed]     = useState(false)
+  const [best, setBest]         = useState(() => {
+    try { return Number(localStorage.getItem(GAME_BEST_KEY)) || null } catch { return null }
+  })
+  const roundStart = useRef(0)
+  const [lastTime, setLastTime] = useState(null)
+  const [flash, setFlash]       = useState(null)       // 'ok' | 'bad'
 
-function RandomMapBtn() {
-  const [map, setMap] = useState(null)
-  const [loading, setLoading] = useState(false)
-
-  async function roll() {
-    setLoading(true)
-    try {
-      const res = await apiGet('/api/random-map')
-      setMap(res.map)
-    } catch (_) {}
-    setLoading(false)
+  // Генерируем раунд: цель + сетка где цель ровно один раз
+  function nextRound(r) {
+    const size = r < 3 ? 6 : r < 6 ? 9 : 12
+    const t = Math.floor(Math.random() * 9) + 1   // 1-9
+    // Остальные клетки — случайные цифры НЕ равные цели
+    const cells = []
+    const targetPos = Math.floor(Math.random() * size)
+    for (let i = 0; i < size; i++) {
+      if (i === targetPos) {
+        cells.push({ n: t, isTarget: true })
+      } else {
+        let n
+        do { n = Math.floor(Math.random() * 9) + 1 } while (n === t)
+        cells.push({ n, isTarget: false })
+      }
+    }
+    setTarget(t)
+    setGrid(cells)
+    roundStart.current = performance.now()
   }
 
-  if (!map) {
-    return (
-      <button onClick={roll} disabled={loading} style={{
-        width:'100%', background:'rgba(255,255,255,0.04)',
-        border:'1px solid rgba(255,255,255,0.1)',
-        borderRadius:12, padding:'12px 16px',
-        display:'flex', alignItems:'center', gap:12,
-        cursor:'pointer', marginBottom:12,
-        transition:'transform 150ms',
-      }}>
-        <span style={{fontSize:20}}>🎲</span>
-        <span style={{fontFamily:'"Permanent Marker",system-ui', fontSize:14, color:'rgba(255,255,255,0.6)', letterSpacing:1}}>
-          {loading ? 'ВЫБИРАЕМ...' : 'РАНДОМ КАРТА'}
-        </span>
-      </button>
-    )
+  function start() {
+    setPhase('playing')
+    setRound(0)
+    setTimes([])
+    setFailed(false)
+    setLastTime(null)
+    nextRound(0)
   }
+
+  function handleTap(cell) {
+    if (phase !== 'playing') return
+    if (cell.isTarget) {
+      const dt = performance.now() - roundStart.current
+      hapticFeedback('light')
+      setLastTime(dt)
+      setFlash('ok')
+      setTimeout(() => setFlash(null), 150)
+      const newTimes = [...times, dt]
+      setTimes(newTimes)
+      const nextR = round + 1
+      if (nextR >= GAME_ROUNDS) {
+        finish(newTimes)
+      } else {
+        setRound(nextR)
+        nextRound(nextR)
+      }
+    } else {
+      // Ошибка — раунд провален, игра окончена
+      hapticFeedback('heavy')
+      setFailed(true)
+      setFlash('bad')
+      setTimeout(() => setFlash(null), 200)
+      finish(times, true)
+    }
+  }
+
+  function finish(finalTimes, didFail = false) {
+    setPhase('done')
+    if (!didFail && finalTimes.length === GAME_ROUNDS) {
+      const avg = finalTimes.reduce((a, b) => a + b, 0) / finalTimes.length
+      if (!best || avg < best) {
+        setBest(avg)
+        try { localStorage.setItem(GAME_BEST_KEY, String(Math.round(avg))) } catch {}
+      }
+    }
+  }
+
+  const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0
+  const cols = grid.length <= 6 ? 3 : grid.length <= 9 ? 3 : 4
 
   return (
     <div style={{
-      marginBottom:12,
-      background:'rgba(255,255,255,0.95)',
-      border:'2px solid #000', borderRadius:12,
-      padding:'12px 16px',
-      boxShadow:'3px 3px 0 #000',
-      display:'flex', alignItems:'center', gap:12,
-      position:'relative', overflow:'hidden',
+      position:'relative', minHeight:'100vh', background:'#0a0a0a',
+      padding:'20px 16px', fontFamily:'"Nunito",system-ui',
+      display:'flex', flexDirection:'column',
     }}>
-      <div style={{position:'absolute',top:0,right:0,width:60,height:60,pointerEvents:'none',backgroundImage:'radial-gradient(rgba(255,153,204,0.4) 0.7px,transparent 1px)',backgroundSize:'5px 5px',maskImage:'radial-gradient(60% 60% at 100% 0%,#000,transparent)',WebkitMaskImage:'radial-gradient(60% 60% at 100% 0%,#000,transparent)'}}/>
-      <span style={{fontSize:28}}>{map.emoji}</span>
-      <div style={{flex:1}}>
-        <div style={{fontFamily:'"Permanent Marker",system-ui', fontSize:18, color:'#000', letterSpacing:1}}>{map.name}</div>
-        <div style={{fontFamily:'"Nunito",system-ui', fontSize:9, letterSpacing:2, fontWeight:800, color:'#6a6a6a', marginTop:2}}>КАРТА НА ПРАК</div>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:24 }}>
+        <button onClick={() => { hapticFeedback(); onBack() }} style={{
+          all:'unset', cursor:'pointer', width:34, height:34, borderRadius:'50%',
+          background:'#000', border:'2px solid #fff',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          color:'#fff', fontSize:18,
+        }}>←</button>
+        <div style={{
+          fontFamily:'"Permanent Marker",cursive', fontSize:18,
+          color:'#fff', letterSpacing:1,
+        }}>РЕАКЦИЯ</div>
       </div>
-      <button onClick={roll} style={{
-        all:'unset', cursor:'pointer', fontSize:20,
-        padding:'4px 8px', borderRadius:8,
-        background:'rgba(0,0,0,0.06)',
-      }}>🔄</button>
+
+      {phase === 'intro' && (
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>⚡</div>
+          <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:26, color:'#fff', marginBottom:12, letterSpacing:1 }}>ТРЕНАЖЁР РЕАКЦИИ</div>
+          <div style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.5)', lineHeight:1.7, maxWidth:280, marginBottom:8 }}>
+            Запомни цифру сверху и найди её в сетке как можно быстрее. 10 раундов, замер в миллисекундах.
+          </div>
+          <div style={{ fontSize:12, fontWeight:700, color:'#ff99cc', marginBottom:28 }}>
+            ⚠️ Ошибся — игра окончена
+          </div>
+          {best && (
+            <div style={{ marginBottom:24, fontSize:13, color:'rgba(255,255,255,0.6)', fontWeight:800 }}>
+              🏆 Лучший результат: <span style={{ color:'#ff99cc' }}>{Math.round(best)} мс</span>
+            </div>
+          )}
+          <button onClick={start} style={{
+            background:'#fff', color:'#000', border:'2px solid #000', borderRadius:14,
+            padding:'16px 48px', fontFamily:'"Permanent Marker",cursive', fontSize:18,
+            letterSpacing:2, cursor:'pointer', boxShadow:'4px 4px 0 #ff99cc',
+          }}>СТАРТ</button>
+        </div>
+      )}
+
+      {phase === 'playing' && (
+        <>
+          {/* Статы */}
+          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:18, padding:'0 4px' }}>
+            <div>
+              <div style={{ fontSize:9, letterSpacing:2, color:'#555', fontWeight:800 }}>РАУНД</div>
+              <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:22, color:'#fff' }}>{round + 1}<span style={{ color:'#444', fontSize:15 }}>/{GAME_ROUNDS}</span></div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:9, letterSpacing:2, color:'#555', fontWeight:800 }}>ПОСЛЕДНИЙ</div>
+              <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:22, color:'#ff99cc' }}>{lastTime ? Math.round(lastTime) : '—'}<span style={{ color:'#444', fontSize:13 }}>мс</span></div>
+            </div>
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontSize:9, letterSpacing:2, color:'#555', fontWeight:800 }}>СРЕДНЕЕ</div>
+              <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:22, color:'#fff' }}>{avg ? Math.round(avg) : '—'}<span style={{ color:'#444', fontSize:13 }}>мс</span></div>
+            </div>
+          </div>
+
+          {/* Целевая цифра */}
+          <div style={{
+            background: flash === 'ok' ? '#d4ffe0' : flash === 'bad' ? '#ffd4d4' : '#fff',
+            border:'2px solid #000', borderRadius:14, padding:'14px',
+            marginBottom:16, textAlign:'center', position:'relative', overflow:'hidden',
+            boxShadow:'4px 4px 0 #ff99cc', transition:'background 100ms',
+          }}>
+            <div style={{ position:'absolute', top:6, right:8, width:40, height:40, backgroundImage:'radial-gradient(#000 1px,transparent 1.2px)', backgroundSize:'5px 5px', opacity:0.12 }}/>
+            <div style={{ fontSize:9, letterSpacing:3, color:'#999', fontWeight:800, marginBottom:4 }}>НАЙДИ ЦИФРУ</div>
+            <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:56, color:'#000', lineHeight:1 }}>{target}</div>
+          </div>
+
+          {/* Сетка */}
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols},1fr)`, gap:8 }}>
+            {grid.map((cell, i) => (
+              <button key={i} onClick={() => handleTap(cell)} style={{
+                all:'unset', aspectRatio:'1', background:'#141414',
+                border:'1.5px solid #2a2a2a', borderRadius:12,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontFamily:'"Permanent Marker",cursive', fontSize:28, color:'#888',
+                cursor:'pointer',
+              }}>{cell.n}</button>
+            ))}
+          </div>
+
+          {/* Прогресс */}
+          <div style={{ marginTop:18, height:6, background:'#1a1a1a', borderRadius:3, overflow:'hidden' }}>
+            <div style={{ width:`${(round / GAME_ROUNDS) * 100}%`, height:'100%', background:'#ff99cc', transition:'width 200ms' }}/>
+          </div>
+        </>
+      )}
+
+      {phase === 'done' && (
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>{failed ? '💀' : '🎯'}</div>
+          <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:26, color:'#fff', marginBottom:8, letterSpacing:1 }}>
+            {failed ? 'ПРОМАХ!' : 'ГОТОВО!'}
+          </div>
+
+          {failed ? (
+            <div style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.5)', marginBottom:24 }}>
+              Прошёл раундов: {times.length} из {GAME_ROUNDS}
+            </div>
+          ) : (
+            <div style={{ marginBottom:24 }}>
+              <div style={{ fontSize:11, letterSpacing:2, color:'#555', fontWeight:800, marginBottom:4 }}>СРЕДНЯЯ РЕАКЦИЯ</div>
+              <div style={{ fontFamily:'"Permanent Marker",cursive', fontSize:44, color:'#ff99cc' }}>{Math.round(avg)}<span style={{ fontSize:20, color:'#666' }}>мс</span></div>
+            </div>
+          )}
+
+          {best && (
+            <div style={{ marginBottom:28, fontSize:13, color:'rgba(255,255,255,0.6)', fontWeight:800 }}>
+              🏆 Рекорд: <span style={{ color:'#ff99cc' }}>{Math.round(best)} мс</span>
+              {!failed && Math.round(avg) === Math.round(best) && times.length === GAME_ROUNDS && (
+                <span style={{ color:'#22c55e', display:'block', marginTop:4 }}>НОВЫЙ РЕКОРД! 🔥</span>
+              )}
+            </div>
+          )}
+
+          <button onClick={start} style={{
+            background:'#fff', color:'#000', border:'2px solid #000', borderRadius:14,
+            padding:'16px 48px', fontFamily:'"Permanent Marker",cursive', fontSize:18,
+            letterSpacing:2, cursor:'pointer', boxShadow:'4px 4px 0 #ff99cc', marginBottom:12,
+          }}>ЕЩЁ РАЗ</button>
+          <button onClick={() => { hapticFeedback(); onBack() }} style={{
+            all:'unset', cursor:'pointer', fontSize:13, fontWeight:800,
+            color:'rgba(255,255,255,0.4)', letterSpacing:1,
+          }}>← НА ГЛАВНУЮ</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -498,8 +631,8 @@ function CallAllBtn() {
 
   return (
     <button onClick={callAll} disabled={state !== 'idle'} style={{
-      width:'100%', background: state === 'sent' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
-      border:`1px solid ${state === 'sent' ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`,
+      width:'100%', background: state === 'sent' ? 'rgba(34,197,94,0.15)' : 'var(--card, rgba(255,255,255,0.04))',
+      border:`1px solid ${state === 'sent' ? 'rgba(34,197,94,0.4)' : 'var(--card-border, rgba(255,255,255,0.1))'}`,
       borderRadius:12, padding:'12px 16px',
       display:'flex', alignItems:'center', gap:12,
       cursor: state === 'idle' ? 'pointer' : 'default', marginBottom:12,
@@ -516,11 +649,7 @@ function CallAllBtn() {
 
 // ─── Home view — manga style ──────────────────────────────────────────────────
 
-function HomeView({ onOpenAvail, data, user }) {
-  const [streak, setStreak] = useState(null)
-  useEffect(() => {
-    apiGet('/api/streak').then(setStreak).catch(() => {})
-  }, [])
+function HomeView({ onOpenAvail, onOpenGame, data, user }) {
   const fullHouseCount = data?.slots?.filter(s => s.can?.length >= (data.team_size || 5)).length || 0
   const todaySlots = data?.slots?.filter(s => s.slot_date === formatDateKey(new Date())) || []
   const todayBest = Math.max(0, ...todaySlots.map(s => s.can?.length || 0))
@@ -531,7 +660,7 @@ function HomeView({ onOpenAvail, data, user }) {
     <div style={{
       position: 'relative', minHeight: '100vh', overflow: 'hidden',
       fontFamily: '"Nunito", system-ui',
-      color: '#f5f3ee',
+      color: 'var(--text, #f5f3ee)',
     }}>
       <MangaBg petals halftone />
 
@@ -546,19 +675,19 @@ function HomeView({ onOpenAvail, data, user }) {
         <div style={{ marginBottom: 20 }}>
           <div style={{
             fontSize: 10, letterSpacing: 3, fontWeight: 800,
-            color: 'rgba(255,255,255,0.5)', marginBottom: 6,
+            color: 'var(--text-dim, rgba(255,255,255,0.5))', marginBottom: 6,
           }}>
             ✿ ДОБРО ПОЖАЛОВАТЬ
           </div>
           <div style={{
             fontFamily: '"Permanent Marker", system-ui',
-            fontSize: 52, lineHeight: 0.9, color: '#fff',
+            fontSize: 52, lineHeight: 0.9, color: 'var(--text, #fff)',
             letterSpacing: 3,
           }}>EGOIST</div>
           <div style={{ height: 3, width: 80, background: '#ff99cc', borderRadius: 4, marginTop: 6 }} />
           <div style={{
             marginTop: 8, fontSize: 13, fontWeight: 800,
-            letterSpacing: 2, color: 'rgba(255,255,255,0.7)',
+            letterSpacing: 2, color: 'var(--text-dim, rgba(255,255,255,0.7))',
             fontFamily: '"Permanent Marker", system-ui',
           }}>CS2 SQUAD</div>
         </div>
@@ -566,12 +695,22 @@ function HomeView({ onOpenAvail, data, user }) {
         {/* Anime Eyes Hero — заменяет маскота */}
         <AnimeEyesHero ready={todayBest}/>
 
-        <StreakCard streak={streak}/>
-        {/* Счётчик состава с прогресс-баром */}
-        <SquadCounter today={todayBest} total={teamSize} fullCount={fullHouseCount}/>
-
-        <RandomMapBtn/>
         <CallAllBtn/>
+
+        {/* Тренажёр реакции */}
+        <button onClick={() => { hapticFeedback('medium'); onOpenGame() }} style={{
+          width:'100%', background:'var(--card, rgba(255,255,255,0.04))',
+          border:'1px solid var(--card-border, rgba(255,255,255,0.1))',
+          borderRadius:12, padding:'12px 16px',
+          display:'flex', alignItems:'center', gap:12,
+          cursor:'pointer', marginBottom:12,
+        }}>
+          <span style={{ fontSize:20 }}>⚡</span>
+          <span style={{ fontFamily:'"Permanent Marker",system-ui', fontSize:14, color:'var(--text-dim, rgba(255,255,255,0.6))', letterSpacing:1 }}>
+            ТРЕНАЖЁР РЕАКЦИИ
+          </span>
+        </button>
+
         {/* Main CTA — manga style */}
         <button
           onClick={() => { hapticFeedback('medium'); onOpenAvail() }}
@@ -1222,7 +1361,7 @@ const v = Math.min(dy * 0.45, PULL_THRESHOLD + 16)
   return (
     <div style={{
       position: 'relative', height: '100vh', overflow: 'hidden',
-      color: '#f5f3ee', fontFamily: '"Nunito", system-ui, sans-serif',
+      color: 'var(--text, #f5f3ee)', fontFamily: '"Nunito", system-ui, sans-serif',
     }}>
       <MangaBg petals halftone />
 
