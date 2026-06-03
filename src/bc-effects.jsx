@@ -15,7 +15,7 @@ export function MangaBg({ petals: petalsOn = true, halftone = true }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      <div style={{ position: 'absolute', inset: 0, background: '#000' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'var(--bg, #000)' }} />
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: 'repeating-linear-gradient(0deg, transparent 0 92px, rgba(255,255,255,0.03) 92px 93px)',
@@ -135,71 +135,53 @@ export function InkSlash({ k }) {
   )
 }
 
-export function MinimalLoader({ done = false, onTap }) {
-  // Буквы появляются по одной, потом линия, потом CS2·SQUAD·5v5, потом точки
-  // Всё рассчитано на ~3.5 сек
+export function MinimalLoader() {
   return (
-    <div
-      onClick={onTap}
-      style={{
-        position: 'absolute', inset: 0, cursor: 'pointer',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 0, background: '#000',
-      }}
-    >
-      {/* Сетка */}
-      <div style={{ position:'absolute', inset:0, pointerEvents:'none', backgroundImage:'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', maskImage:'radial-gradient(ellipse at center,black 30%,transparent 80%)', WebkitMaskImage:'radial-gradient(ellipse at center,black 30%,transparent 80%)' }}/>
-      {/* Розовый glow */}
-      <div style={{ position:'absolute', top:'35%', left:'50%', transform:'translate(-50%,-50%)', width:320, height:320, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(255,110,180,0.1) 0%,transparent 70%)', animation:'bcGlowPulse 3s ease-in-out infinite', pointerEvents:'none' }}/>
-      {/* Летящий лепесток */}
-      <div style={{ position:'absolute', top:'50%', left:'-10%', animation:'bcPetalDrift 4.6s cubic-bezier(.45,.05,.55,.95) infinite', pointerEvents:'none' }}>
-        <div style={{ position:'relative' }}>
-          <div style={{ position:'absolute', right:'100%', top:'50%', transform:'translateY(-50%)', width:80, height:1.2, background:'linear-gradient(90deg,transparent,rgba(248,165,194,0.45))', borderRadius:999 }}/>
+    <div style={{
+      position: 'absolute', inset: 0,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 20, background: '#000',
+      animation: 'bcFadeIn 380ms ease-out forwards',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none' }}>
+        <svg viewBox="0 0 240 160" width="280" height="180" style={{ opacity: 0.06 }}>
+          <path d="M48 78 C 38 56 78 30 110 36 C 150 28 196 56 192 92 C 210 110 178 138 138 130 C 118 152 70 144 56 120 C 30 116 36 92 48 78 Z" fill="#fff" />
+        </svg>
+      </div>
+      <div style={{
+        position: 'absolute', top: '50%', left: '-10%',
+        animation: 'bcPetalDrift 4.6s cubic-bezier(.45,.05,.55,.95) infinite',
+      }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)',
+            width: 80, height: 1.2,
+            background: 'linear-gradient(90deg, transparent, rgba(248,165,194,0.45))',
+            borderRadius: 999,
+          }} />
           <Petal size={16} rot={6} color="#f8a5c2" hand />
         </div>
       </div>
-
-      {/* EGOIST — буквы по одной */}
-      <div style={{ position:'relative', zIndex:1, fontFamily:'"Permanent Marker",system-ui', fontSize:72, lineHeight:0.9, color:'#fff', letterSpacing:8, display:'flex', marginBottom:16 }}>
+      <div style={{
+        position: 'relative', zIndex: 1,
+        fontFamily: '"Permanent Marker", "Rock Salt", system-ui',
+        fontSize: 64, lineHeight: 0.9, color: '#fff',
+        letterSpacing: 6, display: 'flex',
+      }}>
         {Array.from('EGOIST').map((ch, i) => (
           <span key={i} style={{
-            display:'inline-block', opacity:0,
-            animation:`bcInkReveal 600ms cubic-bezier(.6,.0,.2,1) ${400 + i * 200}ms forwards`,
-            textShadow:'0 0 40px rgba(255,110,180,0.4)',
+            display: 'inline-block', opacity: 0,
+            animation: `bcInkReveal 480ms cubic-bezier(.6,.0,.2,1) ${300 + i * 130}ms forwards`,
           }}>{ch}</span>
         ))}
       </div>
-
-      {/* Линия-разделитель */}
-      <div style={{ position:'relative', zIndex:1, width:0, height:2, background:'linear-gradient(90deg,transparent,#ff6eb4,transparent)', opacity:0, animation:'bcLineExpand 700ms ease-out 1900ms forwards' }}/>
-
-      {/* CS2 · SQUAD · 5v5 */}
-      <div style={{ position:'relative', zIndex:1, fontFamily:'"Permanent Marker",system-ui', fontSize:14, letterSpacing:6, color:'rgba(255,110,180,0.8)', opacity:0, animation:'bcFadeIn 600ms 2500ms forwards', marginTop:14 }}>
-        CS2 · SQUAD · 5v5
-      </div>
-
-      {/* Точки загрузки */}
-      <div style={{ position:'relative', zIndex:1, display:'flex', gap:8, marginTop:28, opacity:0, animation:'bcFadeIn 400ms 3000ms forwards' }}>
-        {[0,1,2].map(i => (
-          <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'#ff6eb4', animation:`bcDotBounce 1.1s ${i*0.18}s ease-in-out infinite` }}/>
-        ))}
-      </div>
-
-      {/* Тап чтобы продолжить — появляется только когда данные готовы */}
-      {done && (
-        <div style={{ position:'absolute', bottom:48, left:0, right:0, textAlign:'center', zIndex:2, opacity:0, animation:'bcFadeIn 500ms 0ms forwards' }}>
-          <div style={{ fontFamily:'"Nunito",system-ui', fontSize:11, letterSpacing:3, fontWeight:800, color:'rgba(255,255,255,0.45)', animation:'bcTapPulse 1.4s ease-in-out infinite' }}>
-            · ТАП ДЛЯ ПРОДОЛЖЕНИЯ ·
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes bcLineExpand   { from{width:0;opacity:0} to{width:160px;opacity:1} }
-        @keyframes bcDotBounce    { 0%,100%{transform:translateY(0);opacity:0.4} 50%{transform:translateY(-7px);opacity:1} }
-        @keyframes bcGlowPulse    { 0%,100%{opacity:0.6;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)} }
-        @keyframes bcTapPulse     { 0%,100%{opacity:0.4} 50%{opacity:0.9} }
-      `}</style>
+      <div style={{
+        position: 'relative', zIndex: 1,
+        fontFamily: '"Nunito", system-ui',
+        fontSize: 11, letterSpacing: 4, fontWeight: 700,
+        color: 'rgba(248,165,194,0.85)',
+        opacity: 0, animation: 'bcFadeIn 600ms 1400ms forwards',
+      }}>ЗАГРУЗКА</div>
     </div>
   )
 }
